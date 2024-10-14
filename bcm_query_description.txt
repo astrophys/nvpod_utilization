@@ -1,0 +1,87 @@
+[bcm10-h01->monitoring->query]% foreach * (get name; get description) | paste - - | expand -t 60
+account_job_effective_cpu_seconds                           CPU seconds effectively used by account for the last period
+account_job_io_bytes                                        Total I/O by account during the last period in Bytes
+account_job_memory_usage_bytes                              Total memory usage by account during the last period in Byte seconds
+account_job_running_count                                   Number of jobs running by account during the last period
+account_job_waiting_seconds                                 Total waiting time for account jobs in seconds during the last period
+account_job_wall_clock_seconds                              Wall clock time used by account for the last period
+account_job_wasted_cpu_seconds                              CPU seconds allocated but not used by account for the last period
+accounts_usage_gpu                                          Total used GPU time grouped by account for the specified period
+accounts_used_gpu                                           Used GPUs, for values of use greater than or equal to 0.1%, averaged and grouped by account using them in the specified period
+accounts_wasted_memory                                      The sum of the minimal wasted memory over all nodes per account for the last period
+cluster_cpu_usage_percent                                   CPU usage percentage over all nodes up
+container_memory_usage_bytes                                Containers' memory usage in bytes
+container_network_received_bytes                            Containers' total Received bytes
+container_total_cpu_usage_secs                              Containers' total CPU Usage in seconds
+container_total_fs_usage_bytes                              Containers' total filesystem usage in bytes
+cpu_usage_by_cluster                                        CPU usage by cluster in nr. of cores
+cpu_usage_by_deployment                                     CPU usage by deployment in nr. of cores
+cpu_usage_by_namespace                                      CPU usage by namespace in nr. of cores
+fs_usage_by_cluster                                         Current FS I/O by cluster in Bytes
+fs_usage_by_deployment                                      Current FS I/O by deployment in Bytes
+fs_usage_by_namespace                                       Current FS I/O by namespace in Bytes
+groups_job_allocated_nodes                                  Number of nodes allocated by groups
+groups_job_cpu_usage                                        Effective CPU usage by groups
+groups_job_io_bytes_per_second                              Current I/O for group jobs in B/s
+groups_job_memory_bytes                                     Current memory consumption for group jobs in Bytes
+groups_job_waiting                                          Number of jobs currently waiting for every group
+groups_usage_gpu                                            Total used GPU time grouped by group for the specified period
+groups_used_gpu                                             Used GPUs, for values of use greater than or equal to 0.1%, averaged and grouped by groups using them in the specified period
+job_effective_cpu_seconds_job_name_for_user                 CPU seconds effectively used by by job_name for a user for the last period
+job_information_by_account                                  Generic job information drill down query grouped by account
+job_information_by_job_id_for_account_and_user_and_job_name Generic job information drill down query grouped by wlm and job_id for a specific account, user and job_name
+job_information_by_job_id_for_user                          Generic job information drill down query grouped by wlm and job_id for a specific user
+job_information_by_job_id_for_user_and_job_name             Generic job information drill down query grouped by wlm and job_id for a specific user and job_name
+job_information_by_job_name_for_account                     Generic job information drill down query grouped by job_name for a specific account
+job_information_by_job_name_for_account_and_user            Generic job information drill down query grouped by job_name for a specific account and user
+job_information_by_job_name_for_user                        Generic job information drill down query grouped by job_name for a specific user
+job_information_by_user                                     Generic job information drill down query grouped by user
+job_information_by_user_for_account                         Generic job information drill down query grouped by user for a specific account
+job_information_by_user_for_account_and_job_name            Generic job information drill down query grouped by user for a specific account and job_name
+job_io_bytes_per_job_name_for_user                          Total I/O by job_name for a user during the last period in Bytes
+job_memory_usage_bytes_per_job_name_for_user                Total memory usage by job_name for a user during the last period in Byte seconds
+job_names_job_allocated_nodes                               Number of nodes allocated by job name
+job_names_job_cpu_usage                                     Effective CPU usage by job name
+job_names_job_io_bytes_per_second                           Current I/O for jobs in B/s
+job_names_job_memory_bytes                                  Current memory consumption for jobs in Bytes
+job_names_job_waiting                                       Number of jobs currently waiting for every job_name
+job_names_usage_gpu                                         Total used GPU time grouped by job name for the specified period
+job_names_used_gpu                                          Used GPUs, for values of use greater than or equal to 0.1%, averaged and grouped by job name using them in the specified period
+job_running_count_job_name_for_user                         Number of jobs running by job_name for a user during the last period
+job_waiting_seconds_job_name_for_user                       Total waiting time for jobs by job_name for a user in seconds during the last period
+job_wall_clock_seconds_job_name_for_user                    Wall clock time used by job_name for a user for the last period
+job_wasted_cpu_seconds_job_name_for_user                    CPU seconds allocated but not used by job_name for a user for the last period
+jobs_wasted_allocated_gpus                                  Average % of allocated GPUs wasted for jobs that ran in the specified period, averaged and grouped by job_id
+memory_usage_by_cluster                                     Total memory usage by cluster during the last week in Bytes per second
+memory_usage_by_deployment                                  Total memory usage by deployment during the last week in Bytes per second
+memory_usage_by_namespace                                   Total memory usage by namespace during the last week in Bytes per second
+net_usage_by_cluster                                        Network usage by cluster in Bytes per second
+net_usage_by_deployment                                     Network usage by deployment in Bytes per second
+net_usage_by_namespace                                      Network usage by namespace in Bytes per second
+storage_ceph_host_apply_latency                             The average apply latency on each host running Ceph OSDs
+storage_ceph_host_commit_latency                            The average commit latency on each host running Ceph OSDs
+storage_ceph_host_cpu_usage                                 The cpu usage on each host running Ceph OSDs
+storage_ceph_osd_bytes_used                                 The amount of disk space used across all OSDs
+storage_ceph_osd_op_ratio                                   The number of operations per second on each Ceph OSD
+unused_gpu_job_name_for_user                                Unused GPUs, for values of use less than 0.1%, averaged and grouped by job names using them in the specified period, for a particular user
+used_gpu_job_name_for_user                                  Used GPUs, for values of use greater than or equal to 0.1%, averaged and grouped by job names using them in the specified period, for a particular user
+users_job_allocated_nodes                                   Number of nodes allocated by users
+users_job_cpu_usage                                         Effective CPU usage by users
+users_job_effective_cpu_seconds                             CPU seconds effectively used by users for the last period
+users_job_io_bytes                                          Total I/O by users during the last period in Bytes
+users_job_io_bytes_per_second                               Current I/O for user jobs in B/s
+users_job_memory_bytes                                      Current memory consumption for user jobs in Bytes
+users_job_memory_usage_bytes                                Total memory usage by users during the last period in Byte seconds
+users_job_running_count                                     Number of jobs running by users during the last period
+users_job_waiting                                           Number of jobs currently waiting for every user
+users_job_waiting_seconds                                   Total waiting time for users jobs in seconds during the last period
+users_job_wall_clock_seconds                                Wall clock time used by users for the last period
+users_job_wasted_cpu_seconds                                CPU seconds allocated but not used by users for the last period
+users_unused_gpu                                            Unused GPUs, for values of use less than 0.1%, averaged and grouped by users using them in the specified period
+users_usage_gpu                                             Total used GPU time grouped by user for the specified period
+users_used_gpu                                              Used GPUs, for values of use greater than or equal to 0.1%, averaged and grouped by users using them in the specified period
+users_wasted_allocated_gpus                                 Average % of allocated GPUs wasted for jobs that ran in the specified period, averaged and grouped by user
+users_wasted_memory                                         The sum of the minimal wasted memory over all nodes per user for the last period
+wasted_allocated_gpus_for_user                              Average % of allocated GPUs wasted for jobs that ran in the specified period, averaged and grouped by job_id, for a particular user
+wasted_memory_job_name_for_account                          The sum of the minimal wasted memory over all nodes by job_name for a account for the last period
+wasted_memory_job_name_for_user                             The sum of the minimal wasted memory over all nodes by job_name for a user for the last period

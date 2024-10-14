@@ -1,5 +1,5 @@
 # Author : Ali Snedden
-# Date   : 02/24/24
+# Date   : 09/18/24
 # License:
 #
 #
@@ -18,56 +18,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from collections import Counter
 from sklearn.feature_extraction.text import CountVectorizer
-
-
-class Job:
-    """Class that maps to a single Slurm job"""
-
-    def __init__(self)
-
-        """Initialize Job Class
-
-        Args :
-
-        Returns :
-
-        Raises :
-
-        """
-
-        self.step = []
-
-
-class Step:
-    """Class that maps to a single Slurm step"""
-
-    def __init__(self, )
-
-        """Initialize Step Class
-
-        Args :
-
-        Returns :
-
-        Raises :
-
-        """
-
-
-class Batch:
-    """Class that maps to the batch script of a Slurm job"""
-
-    def __init__(self, )
-
-        """Initialize Job Class
-
-        Args :
-
-        Returns :
-
-        Raises :
-
-        """
 
 
 # Expects data like : sacct --allusers -P -S 2024-08-01 --format="jobid,user,partition,alloccpus,elapsed,cputime,state,tres" > sacct_2024-08-01.txt

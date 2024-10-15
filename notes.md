@@ -88,15 +88,17 @@
     #) `cmsh` job level
         #. Uses PromQL 
         #. Command 
-            * [basecm10->monitoring->labeledentity]% list|grep 'job_id="1329"'
-              [basecm10->monitoring->labeledentity]% measurables 45447
-              [basecm10->monitoring->labeledentity]% instantquery job_cpuacct_usage_seconds
+            * [head01->monitoring->labeledentity]% list|grep 'job_id="1329"'
+              [head01->monitoring->labeledentity]% measurables 4b91-1d4e    # Pick the one with 'JobSampler'
+              [head01->monitoring->labeledentity]% instantquery job_cpuacct_usage_seconds
+              [head01->monitoring->labeledentity]% dumpmonitoringdata -24h now job_cpuacct_usage_seconds 4b91-1d4e
 #. busy-cpu-and-mem$ sbatch --cpus-per-task=3 --wrap="./a.out 3 2 1000"
    Submitted batch job 335
     a) [bcm10-h01->monitoring->labeledentity]% instantquery job_cpuacct_usage_seconds
        Failed, status: undefined
        Accounting & Reporting functionality is disabled in your certificate
     #) Evidently, Easy8 license lacks this functionality
+#. Fig 12.26 is useful in BCM admin manual
     
 
 QUESTIONS
@@ -116,3 +118,24 @@ QUESTIONS
     a) See BCM notes for details
 #. In section 14.3, what is the difference between measurables and query?
     a) How do they interact?
+#. On DGX (BCM-9.0), why does
+    a) busy-cpu-and-mem$ sbatch --partition=dgxq --cpus-per-task=10 --wrap="./a.out 4 20 10000"
+    #) Yield 
+        [head01->monitoring->labeledentity]% instantquery job_cpuacct_usage_seconds
+        Name                       category group    hostname job         job_id   job_name queue    user     wlm      Timestamp                 Value
+        -------------------------- -------- -------- -------- ----------- -------- -------- -------- -------- -------- ------------------------- --------------
+        job_cpuacct_usage_seconds  dgx1     ali      dgx01    JobSampler  3592     wrap     dgxq     ali      slurm    Mon Oct 14 10:42:58 2024  479.896196086
+    #) ANSWER : b/c job_cpuacct_usage_seconds is querried at some interval
+#. Why can't I find job_cpuacct_usage_seconds? : 
+    a) See : JobSampler entry from 
+       [head01->monitoring->labeledentity]% measurables 4b91-1d4e
+#. Why can't I find gpu measurables? 
+    a) e.g. [head01->monitoring->labeledentity]% measurables 267c-e7a8
+#. In location cXXX, why can't I find JobSampler
+    a) [head01->monitoring->labeledentity]% measurables 4b91-1d4e
+#. In location cXXX, why cant I find measurables
+    [head->wlm[slurm]->jobs]% measurables 9436
+    No measurables for this started job (yet)
+#. [head01->monitoring->labeledentity]% ls | less -SN 
+    a) Seems like data is enphemerally saved, jobs prior to 1952 DNE
+#. How is JobSampler linked to job_cpuacct_usage_seconds?  I don't see it in cmsh

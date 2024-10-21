@@ -18,12 +18,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from collections import Counter
 from sklearn.feature_extraction.text import CountVectorizer
+from functions import parse_sacct_file
 
 
 # Expects data like : sacct --allusers -P -S 2024-08-01 --format="jobid,user,partition,alloccpus,elapsed,cputime,state,tres" > sacct_2024-08-01.txt
 
 def main():
-    """Loads the sacct movie reviews sentiment analysis dataset.
+    """Loads the sacct .
 
     Args
 
@@ -39,9 +40,18 @@ def main():
                     description="This generates plots from output of `sacct`")
     parser.add_argument('--path', metavar='path/to/sacct_text_file', type=str,
                         help='Path to parsable sacct file')
+    parser.add_argument('--start', metavar='starttime', type=str,
+                        help='Time in YYYY-MM-DDTHH:MM:SS format')
+    parser.add_argument('--end', metavar='endtime', type=str,
+                        help='Time in YYYY-MM-DDTHH:MM:SS format')
+    parser.add_argument('--plottype', metavar='plottype', type=str,
+                        help='Options : "histogram", "pie" or "time-series"')
+    #parser.add_argument('--plottype', metavar='plottype', type=str,
+    #                    help='Options : "histogram", "pie" or "time-series"')
     args = parser.parse_args()
     path = args.path
-    df = pd.read_csv(path, sep='|')
+    #df = pd.read_csv(path, sep='|')
+    tmp = parse_sacct_file(path=path)
     sys.stdout.flush()
     sys.exit(0)
 

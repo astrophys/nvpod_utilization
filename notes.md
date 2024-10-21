@@ -43,6 +43,10 @@
         #. Conclusion
             * BCM : CPU (s)     == `sacct : cputime`
             * BCM : Runtime (s) == `sacct : elapsed`
+    #) From meeting on 15-october-2024, we decided to use Slurm's accounting rather
+       than BCM chargeback b/c as can be seen above it is reporting GPU usage on a 
+       system without a GPU
+        #. Observed that it struggles with GPUs across multiple nodes
 
 
 08-october-2024
@@ -134,8 +138,9 @@ QUESTIONS
 #. In location cXXX, why can't I find JobSampler
     a) [head01->monitoring->labeledentity]% measurables 4b91-1d4e
 #. In location cXXX, why cant I find measurables
-    [head->wlm[slurm]->jobs]% measurables 9436
-    No measurables for this started job (yet)
+   [head->wlm[slurm]->jobs]% measurables 9436
+   No measurables for this started job (yet)
+    a) Other jobs don't suffer from this
 #. [head01->monitoring->labeledentity]% ls | less -SN 
     a) Seems like data is enphemerally saved, jobs prior to 1952 DNE
 #. How is JobSampler linked to job_cpuacct_usage_seconds?  I don't see it in cmsh

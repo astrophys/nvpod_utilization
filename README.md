@@ -17,6 +17,15 @@ after a period of time. This makes historical lookback challenging.
 ## Dependencies
 1. Slurm
 2. Base Command Manager (v10.0) with associated Nvidia hardware
+3. You might need to install python3-tk in Ubuntu
+
+## Job States
+You may come across a variety of job states that may be challenging to understand.
+Refer to `man sacct` to understand the meaning of the fields described below. 
+
+Gotchya's:
+1. A `RUNNING` job won't have an End time.
+2. Some jobs that didn't run for one second (e.g. failed immediately) will have an elapsed time = 0s.
 
 
 ## References

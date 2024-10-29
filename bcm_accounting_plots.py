@@ -60,7 +60,7 @@ def main():
     #                    help='Options : "histogram", "pie" or "time-series"')
     args = parser.parse_args()
     path = args.path
-    plottype = args.plottype 
+    plottype = args.plottype
     mintime = datetime.datetime.strptime(args.start, "%Y-%m-%dT%H:%M:%S")
     maxtime = datetime.datetime.strptime(args.end, "%Y-%m-%dT%H:%M:%S")
     walltime = maxtime - mintime
@@ -102,8 +102,8 @@ def main():
     userbycpuL = sorted(userL, key=operator.attrgetter('cputimeraw'), reverse=True)
 
     # total time avail
-    totalcputime = walltime * nnodes * ncpupernode
-    totalgputime = walltime * nnodes * ngpupernode
+    totalsystemcputime = walltime * nnodes * ncpupernode
+    totalsystemgputime = walltime * nnodes * ngpupernode
 
     if plottype == 'pie':
         fig = plt.figure()
@@ -113,25 +113,27 @@ def main():
         usertimeL = [user.cputimeraw for user in userbycpuL]
         usernameL = [user.name for user in userbycpuL]
         # Get unused time
-        unusedtime = totalcputime - sum(usertimeL)
-        ### usertimeL.append(unusedtime)
-        ### usernameL.append("unused")
+        unusedtime = totalsystemcputime - sum(usertimeL)
         usertimeV = np.asarray(usertimeL)
         usertimeV = usertimeV / 3600
         # Split users based off of usage
+        totalcputime = np.sum(usertimeV)
         topuserL,toptimeV,lowuserL,lowtimeV = group_users_by_usage(usernameL,
                                                                    usertimeV,
                                                                    thresh=0.03)
         topuserL.append('')
         toptimeV = np.append(toptimeV, np.sum(lowtimeV))
+        # Make fractional
+        toptimeV = toptimeV / totalcputime
+        lowtimeV = lowtimeV / totalcputime
         # https://matplotlib.org/stable/gallery/pie_and_polar_charts/bar_of_pie.html#sphx-glr-gallery-pie-and-polar-charts-bar-of-pie-py
-        # rotate so that first wedge is split by the x-axis
-        #startangle = -180 * toptimeV[0]
+        ### rotate so that first wedge is split by the x-axis
+        ###startangle = -180 * toptimeV[0]
         wedges, *_ = ax.pie(toptimeV, labels=topuserL, autopct='%1.1f%%')
         ### Do expanded bar
         bottom = 1
         width  = 0.2
-        ax.set_title("CPU : {:.1f}% used".format((1-unusedtime/totalcputime)*100))
+        ax.set_title("CPU : {:.1f}% used".format((1-unusedtime/totalsystemcputime)*100))
         ax2 = fig.add_subplot(gs[0,1])
         n = len(lowtimeV)
         for j, (height, label) in enumerate(reversed([*zip(lowtimeV/np.sum(lowtimeV), lowuserL)])):
@@ -145,38 +147,32 @@ def main():
         ax2.axis('off')
         ax2.set_xlim(- 2.5 * width, 2.5 * width)
 
-        # use ConnectionPatch to draw lines between the two plots
+        ### theta starts on x-axis and goes counter-clockwise
         theta1, theta2 = wedges[-1].theta1, wedges[-1].theta2
         center, r = wedges[-1].center, wedges[-1].r
-        bar_height = sum(lowtimeV)
+        bar_height = 1          #sum(lowtimeV)
 
         # draw top connecting line
         x = r * np.cos(np.pi / 180 * theta2) + center[0]
         y = r * np.sin(np.pi / 180 * theta2) + center[1]
-        #x = r * np.cos(theta2) + center[0]
-        #y = r * np.sin(theta2) + center[1]
+        # use ConnectionPatch to draw lines between the two plots
         con = ConnectionPatch(xyA=(-width / 2, bar_height), coordsA=ax2.transData,
                               xyB=(x, y), coordsB=ax.transData)
         con.set_color([0, 0, 0])
-        con.set_linewidth(4)
+        con.set_linewidth(2)
         ax2.add_artist(con)
 
-        ## # draw bottom connecting line
-        ## #x = r * np.cos(np.pi / 180 * theta1) + center[0]
-        ## #y = r * np.sin(np.pi / 180 * theta1) + center[1]
-        ## x = r * np.cos(theta1) + center[0]
-        ## y = r * np.sin(theta1) + center[1]
-        ## con = ConnectionPatch(xyA=(-width / 2, 0), coordsA=ax2.transData,
-        ##                       xyB=(x, y), coordsB=ax.transData)
-        ## con.set_color([0, 0, 0])
-        ## ax2.add_artist(con)
-        ## con.set_linewidth(4)
+        # draw bottom connecting line
+        x = r * np.cos(np.pi / 180 * theta1) + center[0]
+        y = r * np.sin(np.pi / 180 * theta1) + center[1]
+        con = ConnectionPatch(xyA=(-width / 2, 0), coordsA=ax2.transData,
+                              xyB=(x, y), coordsB=ax.transData)
+        con.set_color([0, 0, 0])
+        ax2.add_artist(con)
+        con.set_linewidth(2)
 
-
-
-
-
-        print("CPU Usage by user out of total cpu time {}h available ".format(totalcputime/3600))
+        print("CPU Usage by user out of total cpu time {}h "
+              "available ".format(totalsystemcputime/3600))
         for i in range(len(usertimeV)):
             print("\t{:<10} : {:<15.2f}h".format(usernameL[i], usertimeV[i]))
 
@@ -188,14 +184,15 @@ def main():
         usertimeL = [user.gputimeraw for user in userbygpuL]
         usernameL = [user.name for user in userbygpuL]
         # Get unused time
-        unusedtime = totalgputime - sum(usertimeL)
+        unusedtime = totalsystemgputime - sum(usertimeL)
         ### usertimeL.append(unusedtime)
         ### usernameL.append("unused")
         usertimeV = np.asarray(usertimeL)
         usertimeV = usertimeV / 3600
         ax.pie(usertimeV, labels=usernameL, autopct='%1.1f%%')
-        ax.set_title("GPU : {:.1f}% used".format((1-unusedtime/totalgputime)*100))
-        print("GPU Usage by user out of total gpu time {}h available ".format(totalgputime/3600))
+        ax.set_title("GPU : {:.1f}% used".format((1-unusedtime/totalsystemgputime)*100))
+        print("GPU Usage by user out of total gpu time {}h "
+              "available ".format(totalsystemgputime/3600))
         for i in range(len(usertimeV)):
             print("\t{:<10} : {:<15.2f}h".format(usernameL[i], usertimeV[i]))
 

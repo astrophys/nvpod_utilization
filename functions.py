@@ -265,7 +265,7 @@ def group_users_by_usage(userL : List[str] = None, timeV : ArrayLike = None,
     return (topuserL,toptimeV,lowuserL,lowtimeV)
 
 
-def make_autopct(percentusertimeV : ArrayLike = None, usernameV : List[str] = None, 
+def make_autopct(percentusertimeV : ArrayLike = None, usernameV : List[str] = None,
                  namethresh : float = None):
     """This formats the pie chart s.t. it isn't cluttered
 

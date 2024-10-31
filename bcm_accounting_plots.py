@@ -32,14 +32,11 @@ import pandas as pd
 import matplotlib
 matplotlib.use('tkagg')
 from classes import User
-from collections import Counter
 import matplotlib.pyplot as plt
+from plot_funcs import make_pie
 from functions import make_autopct
 from functions import parse_sacct_file
 from functions import is_job_in_time_range
-from functions import group_users_by_usage
-from matplotlib.patches import ConnectionPatch
-from sklearn.feature_extraction.text import CountVectorizer
 
 
 # Expects data like : sacct --allusers -P -S 2024-08-01 --format="jobid,jobname,user,nodelist,elapsedraw,alloccpus,cputimeraw,maxrss,state,start,end,reqtres" > sacct_2024-08-01.txt
@@ -115,81 +112,27 @@ def main():
     userbycpuL = sorted(userL, key=operator.attrgetter('cputimeraw'), reverse=True)
 
     # total time avail
-    totalsystemcputime = walltime * nnodes * ncpupernode
-    totalsystemgputime = walltime * nnodes * ngpupernode
 
     if plottype == 'pie':
-        fig = plt.figure()
-        gs = fig.add_gridspec(1,1)
-        # cpu
-        ax = fig.add_subplot(gs[0,0])
+        #### CPU
         usertimeL = [user.cputimeraw for user in userbycpuL]
         usernameL = [user.name for user in userbycpuL]
-        # Get unused time
-        unusedtime = totalsystemcputime - sum(usertimeL)
-        usertimeV = np.asarray(usertimeL)
-        usertimeV = usertimeV / 3600
-        # Split users based off of usage
-        totalcputime = np.sum(usertimeV)
-        #### # https://matplotlib.org/stable/gallery/pie_and_polar_charts/bar_of_pie.html#sphx-glr-gallery-pie-and-polar-charts-bar-of-pie-py
-        percentusertimeV = usertimeV / np.sum(usertimeV) * 100
-        usernameV = np.asarray(usernameL)
-        namethresh = 1
-        wedges, *_ = ax.pie(usertimeV / np.sum(usertimeV), autopct=make_autopct(percentusertimeV,usernameV,namethresh))
-        usernamepercentL = []
-        for i in range(len(usernameL)):
-            user = usernameL[i]
-            usernamepercentL.append("{:.2f}% : {} ".format(percentusertimeV[i], user, namethresh))
-        fig.legend(wedges, usernamepercentL, loc="right")
-        ax.set_title("CPU : {:.1f}% used".format((1-unusedtime/totalsystemcputime)*100))
-        ## Extract by time range
-        fig.show()
+        totalsystemcputime = walltime * nnodes * ncpupernode
+        colorD = make_pie(sortedtimeL = usertimeL, sortednameL = usernameL,
+                          totalsystime=totalsystemcputime, title="CPU")
 
-        print("CPU Usage ({:.1f}) by user out of total cpu time {}h "
-              "available ".format((1-unusedtime/totalsystemcputime)*100, totalsystemcputime/3600))
-        for i in range(len(usertimeV)):
-            print("\t{:<10} : {:<10.2f}h = {:<2.2f}%".format(usernameL[i],
-                  usertimeV[i], percentusertimeV[i]))
-
-        ### Keep user color consistent across graphs
-        colorD = dict()
-        for i in range(len(wedges)):
-            colorD[usernameL[i]] = wedges[i]._original_facecolor
-
-        # Re-enable later, after debugging
-        # gpu
-        fig = plt.figure()
-        gs = fig.add_gridspec(1,1)
-        # cpu
-        ax = fig.add_subplot(gs[0,0])
-        #ax = fig.add_subplot(gs[1,0])
+        #### GPU
         usertimeL = [user.gputimeraw for user in userbygpuL]
         usernameL = [user.name for user in userbygpuL]
-        usernameV = np.asarray(usernameL)
-        # Ensure identical colors across plots
-        colorL = []
-        for user in usernameL:
-            colorL.append(colorD[user])
-        # Get unused time
-        unusedtime = totalsystemgputime - sum(usertimeL)
-        usertimeV = np.asarray(usertimeL)
-        usertimeV = usertimeV / 3600
-        percentusertimeV = usertimeV / np.sum(usertimeV) * 100
-        wedges, *_ = ax.pie(usertimeV / np.sum(usertimeV), colors=colorL, autopct=make_autopct(percentusertimeV,usernameV,namethresh))
-        ax.set_title("GPU : {:.1f}% used".format((1-unusedtime/totalsystemgputime)*100))
-        usernamepercentL = []
-        for i in range(len(usernameV)):
-            user = usernameV[i]
-            usernamepercentL.append("{:.2f}% : {} ".format(percentusertimeV[i], user, namethresh))
-        fig.legend(wedges, usernamepercentL, loc="right")
-        print("GPU Usage ({:.1f}) by user out of total gpu time {}h "
-              "available ".format((1-unusedtime/totalsystemgputime)*100, totalsystemgputime/3600))
-        for i in range(len(usertimeV)):
-            print("\t{:<10} : {:<10.2f}h = {:<2.2f}%".format(usernameL[i], usertimeV[i], percentusertimeV[i]))
+        totalsystemgputime = walltime * nnodes * ngpupernode
+        make_pie(sortedtimeL = usertimeL, sortednameL = usernameL,
+                          colorD=colorD, totalsystime=totalsystemgputime, title="GPU")
+
+    elif plottype == 'time-series':
+        print('stupid')
 
 
     ## Extract by time range
-    fig.show()
 
     sys.stdout.flush()
     sys.exit(0)

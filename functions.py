@@ -1,3 +1,17 @@
+#    Copyright (C) 2024 Ali Snedden
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import os
 import sys
 import random
@@ -34,7 +48,14 @@ def parse_sacct_file(path : str = None):
     ## Get unique job numbers
     jobL = []
     uniqjobnumV = np.unique(df['JobID'].str.split('.', expand=True)[0])
-    endtime   = datetime.datetime.strptime(df['End'].iloc[0], "%Y-%m-%dT%H:%M:%S")
+    #if df['End'].iloc[0] != 'Unknown':
+    #endtime   = datetime.datetime.strptime(df['End'].iloc[0], "%Y-%m-%dT%H:%M:%S")
+    ### Pick absurd date in case first job is 'RUNNING'
+    endtime   = datetime.datetime(1970, 1, 1)
+    #elif df['End'].iloc[0] == 'Unknown':
+    #    endtime   = None
+    #else:
+    #raise ValueError("ERROR!!! endtime = {}".format(df['End'].iloc[0]))
     starttime = datetime.datetime.strptime(df['Start'].iloc[0], "%Y-%m-%dT%H:%M:%S")
 
     for jobid in uniqjobnumV:
@@ -243,3 +264,39 @@ def group_users_by_usage(userL : List[str] = None, timeV : ArrayLike = None,
 
     return (topuserL,toptimeV,lowuserL,lowtimeV)
 
+
+def make_autopct(percentusertimeV : ArrayLike = None, usernameV : List[str] = None, 
+                 namethresh : float = None):
+    """This formats the pie chart s.t. it isn't cluttered
+
+    Args
+
+    Returns
+
+    Raises
+    """
+    #def my_autopct(pct):
+    #    total = sum(values)
+    #    val = int(round(pct*total/100.0))
+    #    return '{p:.2f}%  ({v:d})'.format(p=pct,v=val)
+    # https://stackoverflow.com/a/6170354/4021436
+    #def my_autopct(pct, usertimeV, usernameL):        # matplotlib passes percent.
+    def my_autopct(pct):        # matplotlib passes percent.
+        nonlocal percentusertimeV
+        nonlocal usernameV
+        nonlocal namethresh
+        #total = sum(values)
+        #val = int(round(pct*total/100.0))
+        # Inefficient...
+        if pct > namethresh:
+            userV = usernameV[np.isclose(pct, percentusertimeV)]
+            if userV.shape[0] > 1:
+                raise ValueError("ERROR!! len(user) > 1. user = {}".format(user))
+            user = userV[0]
+            return '{:.1f}% - {}'.format(pct,user)
+        else:
+            return ''
+    return my_autopct
+    #total = sum(values)
+    #val = int(round(pct*total/100.0))
+    #return '{p"poop"

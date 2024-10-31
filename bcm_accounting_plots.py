@@ -1,13 +1,25 @@
 # Author : Ali Snedden
 # Date   : 09/18/24
-# License:
-#
-#
 # Goals (ranked by priority) :
 #
 # Refs :
 #   a)
 #   #) https://www.nltk.org/book/ch06.html
+#
+# Copyright (C) 2024 Ali Snedden
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 import os
 import sys
@@ -22,6 +34,7 @@ matplotlib.use('tkagg')
 from classes import User
 from collections import Counter
 import matplotlib.pyplot as plt
+from functions import make_autopct
 from functions import parse_sacct_file
 from functions import is_job_in_time_range
 from functions import group_users_by_usage
@@ -29,7 +42,7 @@ from matplotlib.patches import ConnectionPatch
 from sklearn.feature_extraction.text import CountVectorizer
 
 
-# Expects data like : sacct --allusers -P -S 2024-08-01 --format="jobid,user,partition,alloccpus,elapsed,cputime,state,tres" > sacct_2024-08-01.txt
+# Expects data like : sacct --allusers -P -S 2024-08-01 --format="jobid,jobname,user,nodelist,elapsedraw,alloccpus,cputimeraw,maxrss,state,start,end,reqtres" > sacct_2024-08-01.txt
 
 # Run via
 #   python -m pdb bcm_accounting_plots.py --path data/sacct_2024-09-01_to_2024-10-16.txt --start 2024-08-30T00:00:00 --end 2024-10-15T00:00:00 --plottype time-series
@@ -107,7 +120,7 @@ def main():
 
     if plottype == 'pie':
         fig = plt.figure()
-        gs = fig.add_gridspec(1,4)
+        gs = fig.add_gridspec(1,1)
         # cpu
         ax = fig.add_subplot(gs[0,0])
         usertimeL = [user.cputimeraw for user in userbycpuL]
@@ -118,83 +131,61 @@ def main():
         usertimeV = usertimeV / 3600
         # Split users based off of usage
         totalcputime = np.sum(usertimeV)
-        topuserL,toptimeV,lowuserL,lowtimeV = group_users_by_usage(usernameL,
-                                                                   usertimeV,
-                                                                   thresh=0.03)
-        topuserL.append('')
-        toptimeV = np.append(toptimeV, np.sum(lowtimeV))
-        # Make fractional
-        toptimeV = toptimeV / totalcputime
-        lowtimeV = lowtimeV / totalcputime
-        # https://matplotlib.org/stable/gallery/pie_and_polar_charts/bar_of_pie.html#sphx-glr-gallery-pie-and-polar-charts-bar-of-pie-py
-        ### rotate so that first wedge is split by the x-axis
-        ###startangle = -180 * toptimeV[0]
-        wedges, *_ = ax.pie(toptimeV, labels=topuserL, autopct='%1.1f%%')
-        ### Do expanded bar
-        bottom = 1
-        width  = 0.2
+        #### # https://matplotlib.org/stable/gallery/pie_and_polar_charts/bar_of_pie.html#sphx-glr-gallery-pie-and-polar-charts-bar-of-pie-py
+        percentusertimeV = usertimeV / np.sum(usertimeV) * 100
+        usernameV = np.asarray(usernameL)
+        namethresh = 1
+        wedges, *_ = ax.pie(usertimeV / np.sum(usertimeV), autopct=make_autopct(percentusertimeV,usernameV,namethresh))
+        usernamepercentL = []
+        for i in range(len(usernameL)):
+            user = usernameL[i]
+            usernamepercentL.append("{:.2f}% : {} ".format(percentusertimeV[i], user, namethresh))
+        fig.legend(wedges, usernamepercentL, loc="right")
         ax.set_title("CPU : {:.1f}% used".format((1-unusedtime/totalsystemcputime)*100))
-        ax2 = fig.add_subplot(gs[0,1])
-        n = len(lowtimeV)
-        for j, (height, label) in enumerate(reversed([*zip(lowtimeV/np.sum(lowtimeV), lowuserL)])):
-            bottom -= height
-            bc = ax2.bar(0, height, width, bottom=bottom, color='C0', label=label,
-                         alpha=1/n * j)
-            ax2.bar_label(bc, labels=[f"{height:.0%}"], label_type='center')
+        ## Extract by time range
+        fig.show()
 
-        ax2.set_title('CPU usage')
-        ax2.legend()
-        ax2.axis('off')
-        ax2.set_xlim(- 2.5 * width, 2.5 * width)
-
-        ### theta starts on x-axis and goes counter-clockwise
-        theta1, theta2 = wedges[-1].theta1, wedges[-1].theta2
-        center, r = wedges[-1].center, wedges[-1].r
-        bar_height = 1          #sum(lowtimeV)
-
-        # draw top connecting line
-        x = r * np.cos(np.pi / 180 * theta2) + center[0]
-        y = r * np.sin(np.pi / 180 * theta2) + center[1]
-        # use ConnectionPatch to draw lines between the two plots
-        con = ConnectionPatch(xyA=(-width / 2, bar_height), coordsA=ax2.transData,
-                              xyB=(x, y), coordsB=ax.transData)
-        con.set_color([0, 0, 0])
-        con.set_linewidth(2)
-        ax2.add_artist(con)
-
-        # draw bottom connecting line
-        x = r * np.cos(np.pi / 180 * theta1) + center[0]
-        y = r * np.sin(np.pi / 180 * theta1) + center[1]
-        con = ConnectionPatch(xyA=(-width / 2, 0), coordsA=ax2.transData,
-                              xyB=(x, y), coordsB=ax.transData)
-        con.set_color([0, 0, 0])
-        ax2.add_artist(con)
-        con.set_linewidth(2)
-
-        print("CPU Usage by user out of total cpu time {}h "
-              "available ".format(totalsystemcputime/3600))
+        print("CPU Usage ({:.1f}) by user out of total cpu time {}h "
+              "available ".format((1-unusedtime/totalsystemcputime)*100, totalsystemcputime/3600))
         for i in range(len(usertimeV)):
-            print("\t{:<10} : {:<15.2f}h".format(usernameL[i], usertimeV[i]))
+            print("\t{:<10} : {:<10.2f}h = {:<2.2f}%".format(usernameL[i],
+                  usertimeV[i], percentusertimeV[i]))
 
+        ### Keep user color consistent across graphs
+        colorD = dict()
+        for i in range(len(wedges)):
+            colorD[usernameL[i]] = wedges[i]._original_facecolor
 
-
-
+        # Re-enable later, after debugging
         # gpu
-        ax = fig.add_subplot(gs[0,2])
+        fig = plt.figure()
+        gs = fig.add_gridspec(1,1)
+        # cpu
+        ax = fig.add_subplot(gs[0,0])
+        #ax = fig.add_subplot(gs[1,0])
         usertimeL = [user.gputimeraw for user in userbygpuL]
         usernameL = [user.name for user in userbygpuL]
+        usernameV = np.asarray(usernameL)
+        # Ensure identical colors across plots
+        colorL = []
+        for user in usernameL:
+            colorL.append(colorD[user])
         # Get unused time
         unusedtime = totalsystemgputime - sum(usertimeL)
-        ### usertimeL.append(unusedtime)
-        ### usernameL.append("unused")
         usertimeV = np.asarray(usertimeL)
         usertimeV = usertimeV / 3600
-        ax.pie(usertimeV, labels=usernameL, autopct='%1.1f%%')
+        percentusertimeV = usertimeV / np.sum(usertimeV) * 100
+        wedges, *_ = ax.pie(usertimeV / np.sum(usertimeV), colors=colorL, autopct=make_autopct(percentusertimeV,usernameV,namethresh))
         ax.set_title("GPU : {:.1f}% used".format((1-unusedtime/totalsystemgputime)*100))
-        print("GPU Usage by user out of total gpu time {}h "
-              "available ".format(totalsystemgputime/3600))
+        usernamepercentL = []
+        for i in range(len(usernameV)):
+            user = usernameV[i]
+            usernamepercentL.append("{:.2f}% : {} ".format(percentusertimeV[i], user, namethresh))
+        fig.legend(wedges, usernamepercentL, loc="right")
+        print("GPU Usage ({:.1f}) by user out of total gpu time {}h "
+              "available ".format((1-unusedtime/totalsystemgputime)*100, totalsystemgputime/3600))
         for i in range(len(usertimeV)):
-            print("\t{:<10} : {:<15.2f}h".format(usernameL[i], usertimeV[i]))
+            print("\t{:<10} : {:<10.2f}h = {:<2.2f}%".format(usernameL[i], usertimeV[i], percentusertimeV[i]))
 
 
     ## Extract by time range

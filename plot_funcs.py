@@ -21,6 +21,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
+import datetime
 import matplotlib
 import numpy as np
 import pandas as pd
@@ -29,6 +30,9 @@ from typing import List,Dict
 import matplotlib.pyplot as plt
 from functions import make_autopct
 from numpy.typing import ArrayLike
+from classes import Job,Step,SacctObj,User
+from functions import is_job_in_time_range
+
 
 def make_pie(sortedtimeL : List[float] = None, sortednameL : List[str] = None,
              totalsystime : float = None, colorD : Dict[str, str] = None,
@@ -95,7 +99,67 @@ def make_pie(sortedtimeL : List[float] = None, sortednameL : List[str] = None,
     return colorD
 
 
+def make_time_series(jobL : List[Job] = None, start : datetime.datetime = None,
+                     end : datetime.datetime = None, interval : float = None,
+                     cpuorgpu : str = None, totalsystime : float = None):
+    """Generates time series plot. Integrate over interval between 'start' and 'end'
 
+    Args
 
+        N/A
 
+    Returns
 
+    Raises
+
+    """
+    delta = datetime.timedelta(seconds=interval)
+    date = start
+    usageL = []
+    timeL = []
+    # Loop over intervals
+    while date <= end:
+        #print(date.strftime("%Y-%m-%d"))
+        # Time interval
+        mint = date
+        maxt = date + delta
+        print("{}   --->   {}".format(mint.strftime("%Y-%m-%d"),
+              maxt.strftime("%Y-%m-%d")))
+        timeraw = 0
+        for job in jobL:
+            inrange, overlap = is_job_in_time_range(job, mint, maxt)
+            if inrange == True:
+                if cpuorgpu.lower() == 'gpu':
+                    if job.elapsedraw > 0:
+                        timeraw += (job.gputimeraw * overlap.total_seconds() /
+                                    job.elapsedraw)
+                elif cpuorgpu.lower() == 'cpu':
+                    if job.elapsedraw > 0:
+                        timeraw += (job.cputimeraw * overlap.total_seconds() /
+                                   job.elapsedraw)
+                else:
+                    raise ValueError("ERROR!!! Invalid value for cpuorgpu"
+                                     " {}".format(cpuorgpu))
+        usageL.append(timeraw)
+        timeL.append(date + delta/2.0)
+        print("{} : {}".format(timeL[-1], timeraw / totalsystime * 100))
+        date += delta
+    usageV = np.asarray(usageL)
+
+    #### Plot
+    fig = plt.figure()
+    gs = fig.add_gridspec(1,1)
+    # cpu
+    ax = fig.add_subplot(gs[0,0])
+    ax.plot(timeL,usageV/ totalsystime * 100)
+    #https://stackoverflow.com/a/56139690/4021436
+    #ax.set_xticklabels(timeL, rotation=45, ha='right')
+    ax.tick_params(axis='x', labelrotation=45)
+    ax.set_title("Percent {} allocation ".format(cpuorgpu))
+    ax.set_ylabel("{} % allocation".format(cpuorgpu))
+    print("Time Sum = {}".format(np.sum(usageV)))
+    print("Total Time avail = {}".format(totalsystime))
+    print("Average Utilization = {}".format(np.mean(usageV)/totalsystime))
+
+    ## Extract by time range
+    fig.show()

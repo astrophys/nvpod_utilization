@@ -27,6 +27,9 @@ Gotchya's:
 1. A `RUNNING` job won't have an End time.
 2. Some jobs that didn't run for one second (e.g. failed immediately) will have an elapsed time = 0s.
 
+## Costs
+You can compare DGX's with p5.48xlarge which in Atlanta costs $98.32 / hour.
 
 ## References
 1. [Baseview Admin Manual](https://support.brightcomputing.com/manuals/10/admin-manual.pdf)
+#. 

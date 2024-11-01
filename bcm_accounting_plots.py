@@ -34,6 +34,7 @@ matplotlib.use('tkagg')
 from classes import User
 import matplotlib.pyplot as plt
 from plot_funcs import make_pie
+from plot_funcs import make_time_series
 from functions import make_autopct
 from functions import parse_sacct_file
 from functions import is_job_in_time_range
@@ -86,34 +87,36 @@ def main():
     #df = pd.read_csv(path, sep='|')
     (jobL,starttime,endtime) = parse_sacct_file(path=path)
 
-    ## Extract by user
-    userL = []
-    usernameL = np.unique([job.user for job in jobL])
-    for username in usernameL:
-        njob = 0
-        cputimeraw = 0
-        gputimeraw = 0
-        # Extracts ANY job that has ANY part fall w/in the [mintime, maxtime]
-        for job in jobL:
-            if username == job.user:
-                inrange,overlap = is_job_in_time_range(job, mintime, maxtime)
-                if inrange is True and job.elapsedraw > 0:
-                    njob += 1
-                    #print("{} {} {} {} {}".format(job.user, job.jobid, overlap.seconds,
-                    #      job.cputimeraw, job.elapsedraw))
-                    cputimeraw += job.cputimeraw * overlap.total_seconds() / job.elapsedraw
-                    gputimeraw += job.gputimeraw * overlap.total_seconds() / job.elapsedraw
-        user = User(name=username, njobs=njob, cputimeraw=cputimeraw,
-                    gputimeraw=gputimeraw)
-        userL.append(user)
-
-    # Sort by GPU usage
-    userbygpuL = sorted(userL, key=operator.attrgetter('gputimeraw'), reverse=True)
-    userbycpuL = sorted(userL, key=operator.attrgetter('cputimeraw'), reverse=True)
-
     # total time avail
 
     if plottype == 'pie':
+        ## Extract by user
+        userL = []
+        usernameL = np.unique([job.user for job in jobL])
+        for username in usernameL:
+            njob = 0
+            cputimeraw = 0
+            gputimeraw = 0
+            # Extracts ANY job that has ANY part fall w/in the [mintime, maxtime]
+            for job in jobL:
+                if username == job.user:
+                    inrange,overlap = is_job_in_time_range(job, mintime, maxtime)
+                    if inrange is True and job.elapsedraw > 0:
+                        njob += 1
+                        #print("{} {} {} {} {}".format(job.user, job.jobid,
+                        #      overlap.seconds, job.cputimeraw, job.elapsedraw))
+                        cputimeraw += (job.cputimeraw * overlap.total_seconds() /
+                                       job.elapsedraw)
+                        gputimeraw += (job.gputimeraw * overlap.total_seconds() /
+                                       job.elapsedraw)
+            user = User(name=username, njobs=njob, cputimeraw=cputimeraw,
+                        gputimeraw=gputimeraw)
+            userL.append(user)
+
+        # Sort by GPU usage
+        userbygpuL = sorted(userL, key=operator.attrgetter('gputimeraw'), reverse=True)
+        userbycpuL = sorted(userL, key=operator.attrgetter('cputimeraw'), reverse=True)
+
         #### CPU
         usertimeL = [user.cputimeraw for user in userbycpuL]
         usernameL = [user.name for user in userbycpuL]
@@ -129,11 +132,12 @@ def main():
                           colorD=colorD, totalsystime=totalsystemgputime, title="GPU")
 
     elif plottype == 'time-series':
-        print('stupid')
-
+        interval = 3600 * 24    # in seconds
+        totaltimeperinterval = interval * nnodes * ngpupernode
+        make_time_series(jobL=jobL, start=mintime, end=maxtime, interval=interval,
+                         cpuorgpu='gpu', totalsystime=totaltimeperinterval)
 
     ## Extract by time range
-
     sys.stdout.flush()
     sys.exit(0)
 

@@ -139,7 +139,7 @@ def string2time(string : str = None):
 
 
 def is_job_in_time_range(job : Job = None, mintime : datetime.datetime = None,
-                         maxtime : datetime.datetime = None):
+                         maxtime : datetime.datetime = None, verbose : bool = False):
     """Returns True or False if the job.start / job.end fall within the time range
 
     Args
@@ -155,14 +155,16 @@ def is_job_in_time_range(job : Job = None, mintime : datetime.datetime = None,
     """
     # I don't know how to handle jobs with an invalid start time
     if job.start is None:
-        print("Job {} has invalid start time {}...."
-              "skipping".format(job.jobid,job.start))
+        if verbose is True:
+            print("Job {} has invalid start time {}...."
+                  "skipping".format(job.jobid,job.start))
         inrange=False
         overlap=0
         return inrange,overlap
     if job.end is None:
-        print("Job {} has invalid end time {}, in state {}...."
-              "skipping".format(job.jobid, job.end, job.state))
+        if verbose is True:
+            print("Job {} has invalid end time {}, in state {}...."
+                  "skipping".format(job.jobid, job.end, job.state))
         inrange=False
         overlap=0
         return inrange,overlap

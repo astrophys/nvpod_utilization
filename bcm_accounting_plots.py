@@ -30,11 +30,12 @@ import operator
 import numpy as np
 import pandas as pd
 import matplotlib
-matplotlib.use('tkagg')
+#matplotlib.use('tkagg')        # Linux
+matplotlib.use('qtagg')        # Linux
 from classes import User
 import matplotlib.pyplot as plt
 from plot_funcs import make_pie
-from plot_funcs import make_time_series
+from plot_funcs import plot_time_series
 from functions import make_autopct
 from functions import parse_sacct_file
 from functions import is_job_in_time_range
@@ -67,10 +68,13 @@ def main():
                         help='Time in YYYY-MM-DDTHH:MM:SS format')
     parser.add_argument('--plottype', metavar='plottype', type=str,
                         help='Options : "histogram", "pie" or "time-series"')
+    parser.add_argument('--users', metavar='users', type=str,
+                        help='Options : "all", "total" or "someuser"')
     #parser.add_argument('--plottype', metavar='plottype', type=str,
     #                    help='Options : "histogram", "pie" or "time-series"')
     args = parser.parse_args()
     path = args.path
+    users = args.users
     plottype = args.plottype
     mintime = datetime.datetime.strptime(args.start, "%Y-%m-%dT%H:%M:%S")
     maxtime = datetime.datetime.strptime(args.end, "%Y-%m-%dT%H:%M:%S")
@@ -134,8 +138,9 @@ def main():
     elif plottype == 'time-series':
         interval = 3600 * 24    # in seconds
         totaltimeperinterval = interval * nnodes * ngpupernode
-        make_time_series(jobL=jobL, start=mintime, end=maxtime, interval=interval,
-                         cpuorgpu='gpu', totalsystime=totaltimeperinterval)
+        plot_time_series(jobL=jobL, start=mintime, end=maxtime, interval=interval,
+                         cpuorgpu='gpu', totalsystime=totaltimeperinterval,
+                         users=users)
 
     ## Extract by time range
     sys.stdout.flush()

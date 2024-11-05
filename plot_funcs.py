@@ -3,8 +3,6 @@
 # Goals (ranked by priority) :
 #
 # Refs :
-#   a)
-#   #) https://www.nltk.org/book/ch06.html
 #
 # Copyright (C) 2024 Ali Snedden
 #
@@ -30,6 +28,7 @@ from typing import List,Dict
 import matplotlib.pyplot as plt
 from functions import make_autopct
 from numpy.typing import ArrayLike
+from collections import OrderedDict
 from classes import Job,Step,SacctObj,User
 from functions import is_job_in_time_range
 
@@ -99,10 +98,10 @@ def make_pie(sortedtimeL : List[float] = None, sortednameL : List[str] = None,
     return colorD
 
 
-def make_time_series(jobL : List[Job] = None, start : datetime.datetime = None,
+def gather_time_series(jobL : List[Job] = None, start : datetime.datetime = None,
                      end : datetime.datetime = None, interval : float = None,
                      cpuorgpu : str = None, totalsystime : float = None):
-    """Generates time series plot. Integrate over interval between 'start' and 'end'
+    """Gathers data for time series plot.
 
     Args
 
@@ -115,51 +114,147 @@ def make_time_series(jobL : List[Job] = None, start : datetime.datetime = None,
     """
     delta = datetime.timedelta(seconds=interval)
     date = start
-    usageL = []
-    timeL = []
+    #usageL = []
+    #timeL = []
+    #userL = []
+    #df = pd.DataFrame()
+    dateD = OrderedDict()
+
     # Loop over intervals
     while date <= end:
-        #print(date.strftime("%Y-%m-%d"))
         # Time interval
         mint = date
         maxt = date + delta
+        midt = date + delta/2.0
+        userD = dict()
         print("{}   --->   {}".format(mint.strftime("%Y-%m-%d"),
               maxt.strftime("%Y-%m-%d")))
-        timeraw = 0
+        totalraw = 0
         for job in jobL:
+            #if job.user not in  userL:
+            #    userL.append(job.user)
             inrange, overlap = is_job_in_time_range(job, mint, maxt)
             if inrange == True:
                 if cpuorgpu.lower() == 'gpu':
                     if job.elapsedraw > 0:
-                        timeraw += (job.gputimeraw * overlap.total_seconds() /
-                                    job.elapsedraw)
+                        jobraw  = (job.gputimeraw * overlap.total_seconds() /
+                                   job.elapsedraw)
+                        totalraw += jobraw
                 elif cpuorgpu.lower() == 'cpu':
                     if job.elapsedraw > 0:
-                        timeraw += (job.cputimeraw * overlap.total_seconds() /
-                                   job.elapsedraw)
+                        jobraw    = (job.cputimeraw * overlap.total_seconds() /
+                                     job.elapsedraw)
+                        totalraw += jobraw
                 else:
                     raise ValueError("ERROR!!! Invalid value for cpuorgpu"
                                      " {}".format(cpuorgpu))
-        usageL.append(timeraw)
-        timeL.append(date + delta/2.0)
-        print("{} : {}".format(timeL[-1], timeraw / totalsystime * 100))
+                ### Add to userD dictionary
+                if job.user in userD.keys():
+                    userD[job.user] += jobraw
+                else :
+                    userD[job.user] = jobraw
+        #usageL.append(totalraw)
+        #timeL.append(midt)
+        userD['total'] = totalraw
+        dateD[midt] = userD
+        #print("{} : {}".format(timeL[-1], totalraw / totalsystime * 100))
         date += delta
-    usageV = np.asarray(usageL)
+    #usageV = np.asarray(usageL)
+    df = pd.DataFrame.from_dict(dateD, orient='index')
+    df.sort_index(inplace=True)
+    #df = pd.DataFrame.from_dict(dateD, orient='columns', columns=dateD.keys())
+    #df = df.replace('NaN', 0)
+    df.fillna(0, inplace=True)
+
+    return df
+
+
+def plot_time_series(jobL : List[Job] = None, start : datetime.datetime = None,
+                     end : datetime.datetime = None, interval : float = None,
+                     cpuorgpu : str = None, totalsystime : float = None,
+                     users : str = None):
+    """Generates time series plot. Integrate over interval between 'start' and 'end'
+
+    Args
+
+        N/A
+
+    Returns
+
+    Raises
+
+    """
+    df = gather_time_series(jobL=jobL, start=start, end=end,
+                            interval=interval, cpuorgpu=cpuorgpu,
+                            totalsystime=totalsystime)
 
     #### Plot
     fig = plt.figure()
-    gs = fig.add_gridspec(1,1)
-    # cpu
-    ax = fig.add_subplot(gs[0,0])
-    ax.plot(timeL,usageV/ totalsystime * 100)
-    #https://stackoverflow.com/a/56139690/4021436
-    #ax.set_xticklabels(timeL, rotation=45, ha='right')
-    ax.tick_params(axis='x', labelrotation=45)
-    ax.set_title("Percent {} allocation ".format(cpuorgpu))
-    ax.set_ylabel("{} % allocation".format(cpuorgpu))
-    print("Time Sum = {}".format(np.sum(usageV)))
-    print("Total Time avail = {}".format(totalsystime))
-    print("Average Utilization = {}".format(np.mean(usageV)/totalsystime))
+
+    ## Only 1 plot - the total
+    if users == 'total':
+        gs = fig.add_gridspec(1,1)
+        # cpu
+        ax = fig.add_subplot(gs[0,0])
+        ax.plot(df['total'].index, df['total'] / totalsystime * 100)
+        #https://stackoverflow.com/a/56139690/4021436
+        #ax.set_xticklabels(timeL, rotation=45, ha='right')
+        ax.tick_params(axis='x', labelrotation=45)
+        ax.set_title("Percent {} allocation ".format(cpuorgpu))
+        ax.set_ylabel("{} % allocation".format(cpuorgpu))
+        print("Time Sum = {}".format(np.sum(df['total'])))
+        print("Total Time avail = {}".format(totalsystime))
+        print("Average Utilization = {}".format(np.mean(df['total'])/totalsystime))
+    ## Total + users plot
+    elif users == 'all':
+        topusers = np.sum(df, axis=0).sort_values(ascending=False)
+        print(topusers)
+        topnames = topusers.index[0:9]
+        gs = fig.add_gridspec(3,3)
+        j = 0
+        i = 0
+        n = 0
+        for username in topnames:
+            j = n % 3
+            i = np.floor(n/3).astype(int)
+            print(i,j)
+            ax = fig.add_subplot(gs[i,j])
+            ax.plot(df[username].index, df[username] / totalsystime * 100)
+            #https://stackoverflow.com/a/56139690/4021436
+            #ax.set_xticklabels(timeL, rotation=45, ha='right')
+            if i == 2:
+                ax.tick_params(axis='x', labelrotation=45)
+            else:
+                ax.set_xticklabels([])
+            if j != 0:
+                ax.set_yticklabels([])
+            else:
+                ax.set_ylabel("{} % allocation".format(cpuorgpu))
+            print("Time Sum = {}".format(np.sum(df['total'])))
+            print("Total Time avail = {}".format(totalsystime))
+            percentutil = np.mean(df[username])/totalsystime * 100
+            print("{} Utilization = {}".format(username, percentutil))
+            ax.set_title("{} : {:.1f}%".format(username,percentutil))
+            n += 1
+        fig.suptitle("Percent {} allocation of top 8 users".format(cpuorgpu))
+
+
+    ### Individual users
+    else:
+        gs = fig.add_gridspec(1,1)
+        # cpu
+        ax = fig.add_subplot(gs[0,0])
+        ax.plot(df[users].index, df[users] / totalsystime * 100)
+        #https://stackoverflow.com/a/56139690/4021436
+        #ax.set_xticklabels(timeL, rotation=45, ha='right')
+        ax.tick_params(axis='x', labelrotation=45)
+        ax.set_title("{} - Percent {} allocation".format(users,cpuorgpu))
+        ax.set_ylabel("{} % allocation".format(cpuorgpu))
+        print("{}".format(users))
+        print("\tTime Sum = {}".format(np.sum(df[users])))
+        print("\tTotal Time avail = {}".format(totalsystime))
+        print("\tAverage Utilization = {}".format(np.mean(df[users])/totalsystime))
+
 
     ## Extract by time range
     fig.show()

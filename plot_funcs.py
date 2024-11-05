@@ -208,7 +208,9 @@ def plot_time_series(jobL : List[Job] = None, start : datetime.datetime = None,
     ## Total + users plot
     elif users == 'all':
         topusers = np.sum(df, axis=0).sort_values(ascending=False)
-        print(topusers)
+        print("df.shape = {}".format(df.shape))
+        #for user in topusers :
+        #    print("{} : {}% ".format(topusers/(df.shape[0] * totalsystime) * 100))
         topnames = topusers.index[0:9]
         gs = fig.add_gridspec(3,3)
         j = 0
@@ -235,6 +237,7 @@ def plot_time_series(jobL : List[Job] = None, start : datetime.datetime = None,
             percentutil = np.mean(df[username])/totalsystime * 100
             print("{} Utilization = {}".format(username, percentutil))
             ax.set_title("{} : {:.1f}%".format(username,percentutil))
+            ax.set_ylim(0,100)
             n += 1
         fig.suptitle("Percent {} allocation of top 8 users".format(cpuorgpu))
 

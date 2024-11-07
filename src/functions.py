@@ -82,7 +82,7 @@ def parse_sacct_file(path : str = None):
         #
         jobobj = Job(jobid=jobid, jobname=jobname, user=user, nodelist=nodelist,
                      elapsedraw=elapsedraw, alloccpus=alloccpus,
-                     cputimeraw=cputimeraw, state=state,
+                     cputimeraw=cputimeraw, maxrss=maxrss, state=state,
                      start=start, end=end, reqtres=reqtres)
         ### Get job steps, batch/bash, extern
         for line in jobdf[jobdf['JobID'].str.contains('\.')].iterrows() :

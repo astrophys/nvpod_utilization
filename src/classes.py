@@ -83,6 +83,20 @@ class SacctObj :
             raise ValueError("ERROR!!! cputimeraw={}, alloccpus*elapsedraw={}".format(
                              cputimeraw,alloccpus*elapsedraw))
         self.cputimeraw = cputimeraw
+        # MaxRSS
+        if 'k' in maxrss.lower():
+            self.maxrss = float(maxrss.lower().split('k')[0])
+        elif 'm' in maxrss.lower():
+            self.maxrss = float(maxrss.lower().split('m')[0])
+        elif 'g' in maxrss.lower():
+            self.maxrss = float(maxrss.lower().split('g')[0])
+        elif 't' in maxrss.lower():
+            self.maxrss = float(maxrss.lower().split('t')[0])
+        elif maxrss is None :
+            self.maxrss = None
+        else:
+            raise ValueError("ERROR!!! Invalid value ({}) for maxrss".format(maxrss))
+        # State
         if 'CANCELLED' in state:
             # Sometimes see things like 'CANCELLED by uid'
             self.state      = 'CANCELLED'
@@ -110,8 +124,9 @@ class Job(SacctObj) :
 
     def __init__(self, jobid : int = None, jobname : str = None, user : str = None,
                  nodelist : str = None, elapsedraw : int = None,
-                 alloccpus : int = None, cputimeraw : str = None, state : str = None,
-                 start : str = None, end : str = None, reqtres : str = None):
+                 alloccpus : int = None, cputimeraw : str = None, maxrss : str = None,
+                 state : str = None, start : str = None, end : str = None,
+                 reqtres : str = None):
 
         """Initialize Job Class
 
@@ -125,8 +140,8 @@ class Job(SacctObj) :
         # https://stackoverflow.com/a/5166588/4021436
         SacctObj.__init__(self, jobid = jobid, jobname = jobname, nodelist = nodelist,
                           elapsedraw = elapsedraw, alloccpus = alloccpus,
-                          cputimeraw = cputimeraw, state = state, start = start,
-                          end = end)
+                          cputimeraw = cputimeraw, maxrss = maxrss, state = state,
+                          start = start, end = end)
         self.user = user
         self.reqtres = reqtres
         # Set these PRIOR to parsing reqtres in case no GPUs were present
@@ -136,6 +151,17 @@ class Job(SacctObj) :
             tresL = substr.split('=')
             if tresL[0] == 'billing':
                 self.reqtresbilling = int(tresL[1])
+            # It is very hard to understand exactly how reqtrescpu is calculated
+            # $ srun --nodes=2 --ntasks-per-node=8 --gpus-per-node=8 --cpus-per-gpu=6
+            #        --pty bash
+            # Yields alloccpus=96, but reqtres = billing=16,cpu=16,gres/gpu=16
+            #
+            # $ srun --nodes=2 --ntasks-per-node=8 --gpus-per-node=8 --cpus-per-task=6
+            #        --pty bash
+            # Yields alloccpus=96, but reqtres = billing=96,cpu=96,gres/gpu=16
+            #
+            # Clearly reqtrescpu is fickle in interpretting, I don't understand why
+            # two ostensibly identical jobs, yielded different reqtres cpu
             if tresL[0] == 'cpu':
                 self.reqtrescpu = int(tresL[1])
             if tresL[0] == 'gres/gpu':
@@ -159,6 +185,9 @@ class Job(SacctObj) :
         self.stepL = []
         self.externL = []
         self.batchL = []
+
+
+    #def write(self)
 
 
 class Step(SacctObj) :

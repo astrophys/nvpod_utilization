@@ -28,6 +28,7 @@ import argparse
 import datetime
 import numpy as np
 import pandas as pd
+from collections import OrderedDict
 
 class SacctObj :
     """Class that holds values entries from the sacct output. One line maps to one
@@ -35,9 +36,8 @@ class SacctObj :
 
     def __init__(self, jobid : int = None, jobname : str = None, nodelist : str = None,
                  elapsedraw : int = None, alloccpus : int = None,
-                 cputimeraw : str = None, state : str = None, start : str = None,
-                 end : str = None):
-
+                 cputimeraw : str = None, maxrss : str = None, state : str = None,
+                 start : str = None, end : str = None):
         """Initialize SacctObj Class, contains only fields that that should be
            non-empty in sacct output
 
@@ -107,9 +107,15 @@ class SacctObj :
         if start == 'None':
             self.start = None
         else:
-            self.start      = datetime.datetime.strptime(start, "%Y-%m-%dT%H:%M:%S")
+            try :
+                self.start = datetime.datetime.strptime(start, "%Y-%m-%dT%H:%M:%S")
+            except TypeError:
+                self.start = start
         if state != 'RUNNING' :
-            self.end        = datetime.datetime.strptime(end, "%Y-%m-%dT%H:%M:%S")
+            try :
+                self.end  = datetime.datetime.strptime(end, "%Y-%m-%dT%H:%M:%S")
+            except TypeError:
+                self.end = end
         else:
             self.end        = None
         # Sanity check
@@ -117,6 +123,27 @@ class SacctObj :
             if self.start > self.end:
                 raise ValueError("ERROR!!! self.start ({}) > self.end ({}), makes "
                                  "no sense".format(self.start,self.end))
+
+
+    # https://stackoverflow.com/a/47625174/4021436
+    def as_dict(self):
+        """Return self's variables as dictionary s.t. it can be easily converted to
+           a pandas data frame.
+
+        Args :
+
+        Returns :
+
+        Raises :
+
+        """
+        return OrderedDict([
+                ("JobID", self.jobid), ("JobName", self.jobname), ("User", ""),
+                ("NodeList", self.nodelist), ("ElapsedRaw", self.elapsedraw),
+                ("AllocCPUS", self.alloccpus), ("CPUTimeRAW", self.cputimeraw),
+                ("MaxRSS", self.maxrss), ("State", self.state), ("End", self.end),
+                ("ReqTRES", "")
+                           ])
 
 
 class Job(SacctObj) :
@@ -187,6 +214,24 @@ class Job(SacctObj) :
         self.batchL = []
 
 
+    def as_dict(self):
+        """Return self's variables as dictionary s.t. it can be easily converted to
+           a pandas data frame.
+
+        Args :
+
+        Returns :
+
+        Raises :
+
+        """
+        return OrderedDict([
+                ("JobID", self.jobid), ("JobName", self.jobname), ("User", self.user),
+                ("NodeList", self.nodelist), ("ElapsedRaw", self.elapsedraw),
+                ("AllocCPUS", self.alloccpus), ("CPUTimeRAW", self.cputimeraw),
+                ("MaxRSS", self.maxrss), ("State", self.state), ("End", self.end),
+                ("ReqTRES", self.reqtres)
+                           ])
     #def write(self)
 
 

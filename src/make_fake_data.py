@@ -33,7 +33,7 @@ import pandas as pd
 import matplotlib
 #matplotlib.use('tkagg')        # Linux
 matplotlib.use('qtagg')        # Linux
-from classes import User
+from classes import User,Job,SacctObj
 import matplotlib.pyplot as plt
 from plot_funcs import make_pie
 from plot_funcs import plot_time_series
@@ -98,6 +98,7 @@ def main():
     maxnodemem = '2063937M'     # Recall that mem isn't a tracked resource..
     ncpu = 3
     jobid=0
+    jobname='stuff'
 
     for uidx in range(len(userL)):
         user = userL[uidx]
@@ -108,32 +109,38 @@ def main():
             remain = remainelapsedL[uidx]
             ngpu = randint(0,maxgpu+1)
             if j < njob - 1:
-                tdelta  = datetime.timedelta(randint(0, nsec))
+                rng = randint(0,int(remain))
+                tdelta  = datetime.timedelta(seconds=rng)
                 jobstart = starttime + tdelta
             # Last job, use up remaining remainelapsedL
             else:
-                jobstart = endtime - remain
+                tdelta  = datetime.timedelta(seconds=rng)
+                jobstart = endtime - tdelta
 
             # Get state
             if jobstart + tdelta > endtime:
                 state = 'RUNNING'
                 jobend = 'Unknown'
-                elapsed = endtime - jobstart
+                elapsed = (endtime - jobstart).total_seconds()
                 remainelapsedL[uidx] -= elapsed
             else:
                 state = 'COMPLETED'
-                jobend = jobstart + elapsed
+                jobend = jobstart + tdelta
+                elapsed = (jobend - jobstart).total_seconds()
                 usergputimeL[uidx] += elapsed * ngpu
-                elapsed = jobend - jobstart
                 remainelapsedL[uidx] -= elapsed
+
+            nodelist = nodeL[uidx]
+            nnode = 1
 
             #ncpu = randint(0, maxcpu)
             # Recall that computing reqtrescpu is confusing and non-intuitive,
             # obviously I'm not accurately computing it here.  All I care about is
             # the number of GPUs
             reqtres = "billing={},cpu={},gres/gpu={},mem={},node={}".format(ncpu, ncpu,
-                      ngpu, maxnodemem, node)
+                      ngpu, maxnodemem, nnode)
             cputimeraw = ncpu * elapsed
+            elapsedraw = elapsed
 
             # Naturally, I'd put the steps / batch into the job.[step,batch]L
             # However to easily to put this into a data frame per
@@ -142,22 +149,21 @@ def main():
             # avoid having to write a 'print' function in the JobL class
             job = Job(jobid=jobid, jobname=jobname, user=user, nodelist=nodelist,
                       elapsedraw=elapsedraw, alloccpus=ncpu, cputimeraw=cputimeraw,
-                      maxrss=maxrss, state=state, start=start, end=end,
+                      maxrss=maxrss, state=state, start=jobstart, end=jobend,
                       reqtres=reqtres)
             jobL.append(job)
             ## Batch
             batch = SacctObj(jobid="{}.batch".format(jobid), jobname='batch',
-                             user='', nodelist=nodelist,
-                             elapsedraw=elapsedraw, alloccpus=ncpu,
+                             nodelist=nodelist, elapsedraw=elapsedraw, alloccpus=ncpu,
                              cputimeraw=cputimeraw, maxrss=maxrss, state=state,
-                             start=start, end=end, reqtres=reqtres)
+                             start=jobstart, end=jobend)
             #job.batchL.append(batch)
             jobL.append(batch)
             ## Step
-            step = SacctObj(jobid="{}.0".format(jobid), jobname=jobname, user='', nodelist=nodelist,
-                       elapsedraw=elapsedraw, alloccpus=ncpu, cputimeraw=cputimeraw,
-                       maxrss=maxrss, state=state, start=start, end=end,
-                       reqtres=reqtres)
+            step = SacctObj(jobid="{}.0".format(jobid), jobname=jobname,
+                       nodelist=nodelist, elapsedraw=elapsedraw, alloccpus=ncpu,
+                       cputimeraw=cputimeraw, maxrss=maxrss, state=state,
+                       start=jobstart, end=jobend)
             #job.stepL.append(step)
             jobL.append(step)
             #jobL.append(job)

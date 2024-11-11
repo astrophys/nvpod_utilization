@@ -139,7 +139,7 @@ class SacctObj :
         """
         return OrderedDict([
                 ("JobID", self.jobid), ("JobName", self.jobname), ("User", ""),
-                ("NodeList", self.nodelist), ("ElapsedRaw", self.elapsedraw),
+                ("NodeList", ','.join(self.nodelist)), ("ElapsedRaw", self.elapsedraw),
                 ("AllocCPUS", self.alloccpus), ("CPUTimeRAW", self.cputimeraw),
                 ("MaxRSS", self.maxrss), ("State", self.state), ("End", self.end),
                 ("ReqTRES", "")
@@ -227,7 +227,7 @@ class Job(SacctObj) :
         """
         return OrderedDict([
                 ("JobID", self.jobid), ("JobName", self.jobname), ("User", self.user),
-                ("NodeList", self.nodelist), ("ElapsedRaw", self.elapsedraw),
+                ("NodeList", ','.join(self.nodelist)), ("ElapsedRaw", self.elapsedraw),
                 ("AllocCPUS", self.alloccpus), ("CPUTimeRAW", self.cputimeraw),
                 ("MaxRSS", self.maxrss), ("State", self.state), ("End", self.end),
                 ("ReqTRES", self.reqtres)

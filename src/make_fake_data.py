@@ -65,7 +65,7 @@ def main():
                         help='Path to output file')
     #parser.add_argument('--start', metavar='starttime', type=str,
     #                    help='Time in YYYY-MM-DDTHH:MM:SS format')
-    #parser.add_argument('--end', metavar='endtime', type=str,
+    #parser.add_argument('--end', metavar='enddate', type=str,
     #                    help='Time in YYYY-MM-DDTHH:MM:SS format')
     #parser.add_argument('--plottype', metavar='plottype', type=str,
     #                    help='Options : "histogram", "pie" or "time-series"')
@@ -81,12 +81,12 @@ def main():
     njob = 10       # number of jobs per user
     state = ['RUNNING', 'COMPLETED', 'CANCELLED', 'CANCELLED by 123', 'NODE_FAIL', 'FAILED']
     ##
-    starttime    = datetime.datetime(2024,10,1)
-    endtime      = datetime.datetime(2024,11,1)
-    nsec         = (endtime - starttime).total_seconds()
+    begindate    = datetime.datetime(2024,10,1)
+    enddate      = datetime.datetime(2024,11,1)
+    totalsec     = (enddate - begindate).total_seconds()
     userL        = ['bill', 'anna', 'ryan']
     #userfracL   = [  0.33,   0.66,    1.0]
-    startelapsedL = [  4000,   5000,   6000]
+    startelapsedL = [40000,  50000,  60000]
     remainelapsedL = startelapsedL.copy()
     usergputimeL = [     0,      0,      0]
     nodeL        = [ 'n01',  'n02',  'n03', 'n04']
@@ -97,7 +97,7 @@ def main():
     maxrss = '1000000K'     # Max mem
     maxnodemem = '2063937M'     # Recall that mem isn't a tracked resource..
     ncpu = 3
-    jobid=0
+    jobid=1
     jobname='stuff'
 
     for uidx in range(len(userL)):
@@ -106,28 +106,38 @@ def main():
         for j in range(njob):
             jobid += 1
             # total time remaining
-            remain = remainelapsedL[uidx]
-            ngpu = randint(0,maxgpu+1)
-            if j < njob - 1:
-                rng = randint(0,int(remain))
-                tdelta  = datetime.timedelta(seconds=rng)
-                jobstart = starttime + tdelta
-            # Last job, use up remaining remainelapsedL
+            remain   = remainelapsedL[uidx]
+            ngpu     = randint(0, maxgpu+1)
+            # Ensure AT LEAST one job is running
+            if j == 0:
+                rng = randint(0,120)
+                jobstart = enddate - datetime.timedelta(seconds=rng)
+                tdelta = datetime.timedelta(seconds=randint(rng, int(totalsec)))
+            # Last job, make sure to use ALL of the time
+            elif j == njob - 1:
+                tdelta   = datetime.timedelta(seconds=remain)
+                jobstart = enddate - tdelta
             else:
-                tdelta  = datetime.timedelta(seconds=rng)
-                jobstart = endtime - tdelta
+                # Get job start time
+                jobstart = begindate + datetime.timedelta(seconds=
+                                                          randint(0, int(totalsec)))
+                # Get job run time
+                rng      = randint(0, int(remain))# + randint(0, 100)
+                tdelta   = datetime.timedelta(seconds=rng)
 
             # Get state
-            if jobstart + tdelta > endtime:
+            if jobstart + tdelta > enddate:
                 state = 'RUNNING'
                 jobend = 'Unknown'
-                elapsed = (endtime - jobstart).total_seconds()
+                elapsed = (enddate - jobstart).total_seconds()
+                print("j={} {} {} {}".format(j, user, remainelapsedL[uidx], elapsed))
                 remainelapsedL[uidx] -= elapsed
             else:
                 state = 'COMPLETED'
                 jobend = jobstart + tdelta
                 elapsed = (jobend - jobstart).total_seconds()
                 usergputimeL[uidx] += elapsed * ngpu
+                print("j={} {} {} {}".format(j, user, remainelapsedL[uidx], elapsed))
                 remainelapsedL[uidx] -= elapsed
 
             nodelist = nodeL[uidx]
@@ -167,8 +177,24 @@ def main():
             #job.stepL.append(step)
             jobL.append(step)
             #jobL.append(job)
+
+    ## Let's print out to validate my code
+    elapsedtimeL=[0, 0, 0]
+    cpurawtimeL =[0, 0, 0]
+    gputimeL    =[0, 0, 0]
+    for job in jobL:
+        if type(job) == Job:
+            user = job.user
+            uidx = 0
+            # Get correct uidx
+            for uidx in range(len(userL)):
+                if userL[uidx] == user:
+                    break
+            elapsedtimeL[uidx] += job.elapsedraw
+    print(elapsedtimeL)     # Gets close
+
     df = pd.DataFrame([job.as_dict() for job in jobL])
-    df.to_csv(outpath, sep='|')
+    df.to_csv(outpath, sep='|', index=False)
     ## Extract by time range
     sys.stdout.flush()
     sys.exit(0)

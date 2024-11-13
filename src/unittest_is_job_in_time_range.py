@@ -10,7 +10,7 @@ from classes import Job
 from functions import is_job_in_time_range
 
 
-class TEST_FIND_CLUSTERS(unittest.TestCase):
+class TEST_IS_JOB_IN_TIME_RANGE(unittest.TestCase):
     """
     Test to see that is_job_in_time_range()'s logic works
 

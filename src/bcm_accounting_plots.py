@@ -89,7 +89,7 @@ def main():
     ncpupernode = 224       # Threads in case of multithreading
 
     #df = pd.read_csv(path, sep='|')
-    (jobL,starttime,endtime) = parse_sacct_file(path=path)
+    (_, _, jobL, starttime, endtime) = parse_sacct_file(path=path)
 
     # total time avail
 

@@ -84,7 +84,9 @@ class SacctObj :
                              cputimeraw,alloccpus*elapsedraw))
         self.cputimeraw = cputimeraw
         # MaxRSS
-        if 'k' in maxrss.lower():
+        if maxrss is None :
+            self.maxrss = None
+        elif 'k' in maxrss.lower():
             self.maxrss = float(maxrss.lower().split('k')[0])
         elif 'm' in maxrss.lower():
             self.maxrss = float(maxrss.lower().split('m')[0])
@@ -92,8 +94,6 @@ class SacctObj :
             self.maxrss = float(maxrss.lower().split('g')[0])
         elif 't' in maxrss.lower():
             self.maxrss = float(maxrss.lower().split('t')[0])
-        elif maxrss is None :
-            self.maxrss = None
         else:
             raise ValueError("ERROR!!! Invalid value ({}) for maxrss".format(maxrss))
         # State
@@ -137,11 +137,22 @@ class SacctObj :
         Raises :
 
         """
+        if self.end is None:
+            end = 'Unknown'
+        else:
+            end = "{}-{:02d}-{:02d}T{:02d}:{:02d}:{:02d}".format(self.end.year,
+                  self.end.month, self.end.day, self.end.hour, self.end.minute,
+                  self.end.second)
+        start = "{}-{:02d}-{:02d}T{:02d}:{:02d}:{:02d}".format(self.start.year,
+                  self.start.month, self.start.day, self.start.hour,
+                  self.start.minute, self.start.second)
+        maxrss = "{}K".format(int(self.maxrss))
         return OrderedDict([
                 ("JobID", self.jobid), ("JobName", self.jobname), ("User", ""),
                 ("NodeList", ','.join(self.nodelist)), ("ElapsedRaw", self.elapsedraw),
                 ("AllocCPUS", self.alloccpus), ("CPUTimeRAW", self.cputimeraw),
-                ("MaxRSS", self.maxrss), ("State", self.state), ("End", self.end),
+                ("MaxRSS", maxrss), ("State", self.state),
+                ("Start", start),("End", end),
                 ("ReqTRES", "")
                            ])
 
@@ -214,6 +225,7 @@ class Job(SacctObj) :
         self.batchL = []
 
 
+    # https://stackoverflow.com/a/47625174/4021436
     def as_dict(self):
         """Return self's variables as dictionary s.t. it can be easily converted to
            a pandas data frame.
@@ -225,13 +237,23 @@ class Job(SacctObj) :
         Raises :
 
         """
+        if self.end is None:
+            end = 'Unknown'
+        else:
+            end = "{}-{:02d}-{:02d}T{:02d}:{:02d}:{:02d}".format(self.end.year,
+                  self.end.month, self.end.day, self.end.hour, self.end.minute,
+                  self.end.second)
+        start = "{}-{:02d}-{:02d}T{:02d}:{:02d}:{:02d}".format(self.start.year,
+                  self.start.month, self.start.day, self.start.hour,
+                  self.start.minute, self.start.second)
+        maxrss = "{}K".format(int(self.maxrss))
         return OrderedDict([
                 ("JobID", self.jobid), ("JobName", self.jobname), ("User", self.user),
                 ("NodeList", ','.join(self.nodelist)), ("ElapsedRaw", self.elapsedraw),
                 ("AllocCPUS", self.alloccpus), ("CPUTimeRAW", self.cputimeraw),
-                ("MaxRSS", self.maxrss), ("State", self.state), ("End", self.end),
-                ("ReqTRES", self.reqtres)
-                           ])
+                ("MaxRSS", maxrss), ("State", self.state),
+                ("Start", start),("End", end),
+                ("ReqTRES", self.reqtres)])
     #def write(self)
 
 
@@ -280,37 +302,3 @@ class User :
         self.cputimeraw = cputimeraw        # in s
         self.gputimeraw = gputimeraw        # in s
 
-
-
-
-#class Batch(SacctObj) :
-#    """Class that maps to the batch script of a Slurm job"""
-#
-#    def __init__(self, )
-#
-#        """Initialize Job Class
-#
-#        Args :
-#
-#        Returns :
-#
-#        Raises :
-#
-#        """
-#
-#class Measurable :
-#    """Class that maps to a BCM measurable"""
-#
-#    def __init__(self, producer : str = None, )
-#
-#        """Initialize Job Class
-#
-#        Args :
-#
-#        Returns :
-#
-#        Raises :
-#
-#        """
-#
-#        self.step = []

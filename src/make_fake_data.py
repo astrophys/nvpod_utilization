@@ -38,7 +38,6 @@ import matplotlib.pyplot as plt
 from plot_funcs import make_pie
 from plot_funcs import plot_time_series
 from functions import make_autopct
-from functions import parse_sacct_file
 from functions import is_job_in_time_range
 
 
@@ -107,7 +106,7 @@ def main():
             jobid += 1
             # total time remaining
             remain   = remainelapsedL[uidx]
-            ngpu     = randint(0, maxgpu+1)
+            ngpu     = uidx                     #randint(0, maxgpu+1)
             # Ensure AT LEAST one job is running
             if j == 0:
                 rng = randint(0,120)
@@ -180,8 +179,8 @@ def main():
 
     ## Let's print out to validate my code
     elapsedtimeL=[0, 0, 0]
-    cpurawtimeL =[0, 0, 0]
-    gputimeL    =[0, 0, 0]
+    gpurawL =[0, 0, 0]
+    cpurawL =[0, 0, 0]
     for job in jobL:
         if type(job) == Job:
             user = job.user
@@ -191,8 +190,20 @@ def main():
                 if userL[uidx] == user:
                     break
             elapsedtimeL[uidx] += job.elapsedraw
-    print(elapsedtimeL)     # Gets close
+            cpurawL[uidx] += job.cputimeraw
+            gpurawL[uidx] += job.gputimeraw
+    print("Job match : ")
+    print("\tjob elapsed = {}".format(elapsedtimeL))     # Gets close
+    print("\tjob cpu raw = {}".format(cpurawL))     # Gets close
+    print("\tjob gpu raw = {}".format(gpurawL))     # Gets close
+    print("Should match : ")
+    print("\telapsed = {}".format(startelapsedL))
+    print("\tcpu raw = [{} {} {}]".format(startelapsedL[0] * ncpu,
+          startelapsedL[1] * ncpu, startelapsedL[2] * ncpu,))
+    print("\tgpu raw = [{} {} {}]".format(startelapsedL[0] * 0,
+          startelapsedL[1] * 1, startelapsedL[2] * 2))
 
+    # Really looping over both SacctObj and Job objects
     df = pd.DataFrame([job.as_dict() for job in jobL])
     df.to_csv(outpath, sep='|', index=False)
     ## Extract by time range

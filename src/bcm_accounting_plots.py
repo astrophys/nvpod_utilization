@@ -44,7 +44,7 @@ from functions import is_job_in_time_range
 # Expects data like : sacct --allusers -P -S 2024-08-01 --format="jobid,jobname,user,nodelist,elapsedraw,alloccpus,cputimeraw,maxrss,state,start,end,reqtres" > sacct_2024-08-01.txt
 
 # Run via
-#   python -m pdb bcm_accounting_plots.py --path data/sacct_2024-09-01_to_2024-10-16.txt --start 2024-08-30T00:00:00 --end 2024-10-15T00:00:00 --plottype time-series
+#    python -m pdb src/bcm_accounting_plots.py --path data/sacct_2024-05-01_to_2024-10-31.txt --start 2024-05-01T00:00:00 --end 2024-11-01T00:00:00 --plottyp time-series --users all
 def main():
     """Loads the sacct .
 
@@ -138,6 +138,8 @@ def main():
     elif plottype == 'time-series':
         interval = 3600 * 24    # in seconds
         totaltimeperinterval = interval * nnodes * ngpupernode
+        if users is None:
+            raise ValueError("ERROR!! Please specify which users to plot")
         plot_time_series(jobL=jobL, start=mintime, end=maxtime, interval=interval,
                          cpuorgpu='gpu', totalsystime=totaltimeperinterval,
                          users=users)

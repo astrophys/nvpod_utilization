@@ -84,7 +84,7 @@ class SacctObj :
                              cputimeraw,alloccpus*elapsedraw))
         self.cputimeraw = cputimeraw
         # MaxRSS
-        if maxrss is None :
+        if maxrss is None or len(maxrss) == 0:
             self.maxrss = None
         elif 'k' in maxrss.lower():
             self.maxrss = float(maxrss.lower().split('k')[0])

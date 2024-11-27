@@ -25,10 +25,13 @@ import numpy as np
 import pandas as pd
 matplotlib.use('tkagg')
 from typing import List,Dict
+import plotly.express as px
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 from functions import make_autopct
 from numpy.typing import ArrayLike
 from collections import OrderedDict
+from plotly.subplots import make_subplots
 from classes import Job,Step,SacctObj,User
 from functions import is_job_in_time_range
 
@@ -169,7 +172,7 @@ def gather_time_series(jobL : List[Job] = None, start : datetime.datetime = None
     return df
 
 
-def plot_time_series(jobL : List[Job] = None, start : datetime.datetime = None,
+def plot_time_series_mpl(jobL : List[Job] = None, start : datetime.datetime = None,
                      end : datetime.datetime = None, interval : float = None,
                      cpuorgpu : str = None, totalsystime : float = None,
                      users : str = None):
@@ -202,9 +205,11 @@ def plot_time_series(jobL : List[Job] = None, start : datetime.datetime = None,
         ax.tick_params(axis='x', labelrotation=45)
         ax.set_title("Percent {} allocation ".format(cpuorgpu))
         ax.set_ylabel("{} % allocation".format(cpuorgpu))
+        ax.set_ylim(0,100)
         print("Time Sum = {}".format(np.sum(df['total'])))
         print("Total Time avail = {}".format(totalsystime))
         print("Average Utilization = {}".format(np.mean(df['total'])/totalsystime))
+        plt.savefig("total_gpu_allocation.pdf")
     ## Total + users plot
     elif users == 'all':
         topusers = np.sum(df, axis=0).sort_values(ascending=False)
@@ -258,6 +263,83 @@ def plot_time_series(jobL : List[Job] = None, start : datetime.datetime = None,
         print("\tTotal Time avail = {}".format(totalsystime))
         print("\tAverage Utilization = {}".format(np.mean(df[users])/totalsystime))
 
+
+    ## Extract by time range
+    fig.show()
+
+
+def plot_time_series_plotly(jobL : List[Job] = None, start : datetime.datetime = None,
+                     end : datetime.datetime = None, interval : float = None,
+                     cpuorgpu : str = None, totalsystime : float = None,
+                     users : str = None):
+    """Generates time series plot. Integrate over interval between 'start' and 'end'
+
+    Args
+
+        N/A
+
+    Returns
+
+    Raises
+
+    """
+    df = gather_time_series(jobL=jobL, start=start, end=end,
+                            interval=interval, cpuorgpu=cpuorgpu,
+                            totalsystime=totalsystime)
+    #### Plot
+    #fig = plt.figure()
+
+    ## Only 1 plot - the total
+    if users == 'total':
+        df['date'] = df.index
+        df['totpercent'] = df['total'] / totalsystime * 100
+        fig = px.line(df, x="date", y="totpercent",
+                      labels={"date":"Date",
+                              "totpercent":"Percent GPU Allocated"},
+                      title="Percent GPU Allocated")
+        fig.write_html("total_gpu_allocated.html")
+
+    ## Total + users plot
+    elif users == 'all':
+        topusers = np.sum(df, axis=0).sort_values(ascending=False)
+        print("df.shape = {}".format(df.shape))
+        #for user in topusers :
+        #    print("{} : {}% ".format(user, topusers/(df.shape[0] * totalsystime) * 100))
+        topnames = topusers.index[0:9]
+        #gs = fig.add_gridspec(3,3)
+        j = 1
+        i = 1
+        n = 0
+        fig = make_subplots(rows=3, cols=3, subplot_titles=topnames)
+        for username in topnames:
+            j = np.floor( n % 3).astype(int)
+            j = j+1
+            i = np.floor( n/3).astype(int)
+            i = i+1
+            print(i,j)
+            #ax = fig.add_subplot(gs[i,j])
+            fig.add_trace(
+                go.Scatter(x=df[username].index, y=df[username] / totalsystime * 100,
+                          name=username),
+                row=i, col=j)
+            print("Time Sum = {}".format(np.sum(df['total'])))
+            print("Total Time avail = {}".format(totalsystime))
+            percentutil = np.mean(df[username])/totalsystime * 100
+            print("{} Utilization = {}".format(username, percentutil))
+            n += 1
+        fig.write_html("all_gpu_allocated.html")
+
+
+    ### Individual users
+    else:
+        df['date'] = df.index
+        df['totpercent'] = df['total'] / totalsystime * 100
+        df['userpercent'] = df[users] / totalsystime * 100
+        fig = px.line(df, x="date", y="userpercent",
+                      labels={"date":"Date",
+                              "userpercent":"Percent GPU Allocated"},
+                      title="Percent GPU Allocated by {}".format(users))
+        fig.write_html("{}_gpu_allocated.html".format(users))
 
     ## Extract by time range
     fig.show()

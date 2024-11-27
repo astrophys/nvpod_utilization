@@ -35,7 +35,8 @@ matplotlib.use('qtagg')        # Linux
 from classes import User
 import matplotlib.pyplot as plt
 from plot_funcs import make_pie
-from plot_funcs import plot_time_series
+from plot_funcs import plot_time_series_mpl
+from plot_funcs import plot_time_series_plotly
 from functions import make_autopct
 from functions import parse_sacct_file
 from functions import is_job_in_time_range
@@ -70,12 +71,15 @@ def main():
                         help='Options : "histogram", "pie" or "time-series"')
     parser.add_argument('--users', metavar='users', type=str,
                         help='Options : "all", "total" or "someuser"')
-    #parser.add_argument('--plottype', metavar='plottype', type=str,
-    #                    help='Options : "histogram", "pie" or "time-series"')
+    parser.add_argument('--engine', metavar='engine', type=str,
+                        help='Options : "plotly" or "matplotlib" (default)')
     args = parser.parse_args()
     path = args.path
     users = args.users
     plottype = args.plottype
+    engine = args.engine
+    if engine is None :
+        engine = 'matplotlib'
     mintime = datetime.datetime.strptime(args.start, "%Y-%m-%dT%H:%M:%S")
     maxtime = datetime.datetime.strptime(args.end, "%Y-%m-%dT%H:%M:%S")
     walltime = maxtime - mintime
@@ -132,6 +136,8 @@ def main():
         usertimeL = [user.gputimeraw for user in userbygpuL]
         usernameL = [user.name for user in userbygpuL]
         totalsystemgputime = walltime * nnodes * ngpupernode
+        if engine == 'plotly':
+            raise NotImplementedError("ERROR!! No plotly pie charts enabled yet")
         make_pie(sortedtimeL = usertimeL, sortednameL = usernameL,
                           colorD=colorD, totalsystime=totalsystemgputime, title="GPU")
 
@@ -140,9 +146,16 @@ def main():
         totaltimeperinterval = interval * nnodes * ngpupernode
         if users is None:
             raise ValueError("ERROR!! Please specify which users to plot")
-        plot_time_series(jobL=jobL, start=mintime, end=maxtime, interval=interval,
-                         cpuorgpu='gpu', totalsystime=totaltimeperinterval,
-                         users=users)
+        if engine == 'matplotlib':
+            plot_time_series_mpl(jobL=jobL, start=mintime, end=maxtime,
+                             interval=interval, cpuorgpu='gpu',
+                             totalsystime=totaltimeperinterval, users=users)
+        elif engine == 'plotly' :
+            plot_time_series_plotly(jobL=jobL, start=mintime, end=maxtime,
+                             interval=interval, cpuorgpu='gpu',
+                             totalsystime=totaltimeperinterval, users=users)
+        else:
+            raise ValueError("ERROR!! Invalid value ({}) for 'engine'".format(engine))
 
     ## Extract by time range
     sys.stdout.flush()

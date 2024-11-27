@@ -327,6 +327,7 @@ def plot_time_series_plotly(jobL : List[Job] = None, start : datetime.datetime =
             percentutil = np.mean(df[username])/totalsystime * 100
             print("{} Utilization = {}".format(username, percentutil))
             n += 1
+        fig.update_yaxes(range=[0, 100])
         fig.write_html("all_gpu_allocated.html")
 
 

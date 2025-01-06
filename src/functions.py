@@ -49,11 +49,11 @@ def parse_sacct_file(path : str = None):
     """
     df = pd.read_csv(path, sep='|', na_filter=False)
     ## group by jobid, strip off '.ext', '.batch' and step number appende by sact
-    #jobnum = df['JobID'].str.split('.', expand=True)[0]
+    #jobnum = df['JobIDRaw'].str.split('.', expand=True)[0]
     #df['jobnum'] = jobnum
     ## Get unique job numbers
     jobL = []
-    uniqjobnumV = np.unique(df['JobID'].str.split('.', expand=True)[0])
+    uniqjobnumV = np.unique(df['JobIDRaw'].str.split('.', expand=True)[0])
     #if df['End'].iloc[0] != 'Unknown':
     #endtime   = datetime.datetime.strptime(df['End'].iloc[0], "%Y-%m-%dT%H:%M:%S")
     ### Pick absurd date in case first job is 'RUNNING'
@@ -65,9 +65,9 @@ def parse_sacct_file(path : str = None):
     starttime = datetime.datetime.strptime(df['Start'].iloc[0], "%Y-%m-%dT%H:%M:%S")
 
     for jobid in uniqjobnumV:
-        jobdf = df[df['JobID'].str.contains(jobid)]
+        jobdf = df[df['JobIDRaw'].str.contains(jobid)]
         #### get toplevel job...
-        job = jobdf[~jobdf['JobID'].str.contains('\.')]       # top level job does not contain
+        job = jobdf[~jobdf['JobIDRaw'].str.contains('\.')]       # top level job does not contain
         jobname = job['JobName'].values[0]
         user    = job['User'].values[0]
         nodelist= job['NodeList'].values[0]
@@ -85,7 +85,7 @@ def parse_sacct_file(path : str = None):
                      cputimeraw=cputimeraw, maxrss=maxrss, state=state,
                      start=start, end=end, reqtres=reqtres)
         ### Get job steps, batch/bash, extern
-        for line in jobdf[jobdf['JobID'].str.contains('\.')].iterrows() :
+        for line in jobdf[jobdf['JobIDRaw'].str.contains('\.')].iterrows() :
             #job = # top level job does not contain
             #line.jobid
             jobname = line[1]['JobName']
@@ -104,9 +104,9 @@ def parse_sacct_file(path : str = None):
                          elapsedraw=elapsedraw, alloccpus=alloccpus,
                          cputimeraw=cputimeraw, state=state,
                          start=start, end=end)
-            if 'batch' in line[1]['JobID']:
+            if 'batch' in line[1]['JobIDRaw']:
                 jobobj.batchL.append(sacctobj)
-            elif 'extern' in line[1]['JobID']:
+            elif 'extern' in line[1]['JobIDRaw']:
                 jobobj.externL.append(sacctobj)
             # Everything else must be a 'step', might screw me later.
             else:

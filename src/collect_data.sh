@@ -23,3 +23,5 @@ done;
 cmsh -c "partition; dumpmonitoringdata -7d now totalgpuutilization" > totalgpuutilization_2min.txt
 cmsh -c "partition; dumpmonitoringdata --consolidationinterval 1h -365d now totalgpuutilization" > totalgpuutilization_1h.txt
 cmsh -c "partition; dumpmonitoringdata --consolidationinterval 1d -365d now totalgpuutilization" > totalgpuutilization_1d.txt
+
+sacct --allusers -P -S 2024-01-01 --format="jobidraw,jobname,user,nodelist,elapsedraw,alloccpus,cputimeraw,maxrss,state,start,end,reqtres" > sacct_`date +'%Y-%m-%d'`

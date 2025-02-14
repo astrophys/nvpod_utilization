@@ -71,9 +71,27 @@ def main():
     gs = fig.add_gridspec(1,1)
     # cpu
     ax = fig.add_subplot(gs[0,0])
-    elapsV = df[df['ElapsedRaw'] >0]
-    ax.hist(np.log10(elapsV))
+    try :
+        batchdf = df[df['JobID'].str.contains(".batch")]
+    except KeyError :
+        batchdf = df[df['JobIDRaw'].str.contains(".batch")]
+    elapsV = batchdf[batchdf['ElapsedRaw'] >0]['ElapsedRaw']
+    #ax.hist(np.log10(elapsV))
+    (countV, binV, _) = ax.hist(elapsV,bins=50,range=(0,10**6))
+    #ax.set_xlabel("log10(seconds)")
+    ax.set_xlabel("seconds")
+    ax.set_ylabel("count")
+    nday = 7
+    sevenday = nday *24*3600
+    n = 0
+    for i in range(len(countV)):
+        if binV[i] > sevenday:
+            n += countV[i]
+        print("({:<.1f}h - {:<.1f}h) : {}".format(binV[i]/3600, binV[i+1]/3600, countV[i]))
+    print("total number of jobs : {}".format(np.sum(countV)))
+    print("total number of jobs above {} days: {}".format(nday, n))
     fig.show()
+
 
 
     ## Extract by time range

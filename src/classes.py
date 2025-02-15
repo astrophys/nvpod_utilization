@@ -28,7 +28,9 @@ import argparse
 import datetime
 import numpy as np
 import pandas as pd
+from typing import List
 from collections import OrderedDict
+
 
 class SacctObj :
     """Class that holds values entries from the sacct output. One line maps to one
@@ -282,6 +284,7 @@ class Step(SacctObj) :
         self.step = step
 
 
+
 class User :
     """Class that holds info for an individual user"""
 
@@ -302,3 +305,119 @@ class User :
         self.cputimeraw = cputimeraw        # in s
         self.gputimeraw = gputimeraw        # in s
 
+
+class Util :
+    """Class that maps entry in a node*_gpuutil_gpu*.txt"""
+
+    def __init__(self, line : str = None):
+
+        """Initialize Util(ization) Class
+
+        Args :
+            line = line with date and utilization in node*_gpuutil_gpu*.txt files
+
+        Returns :
+            Util class
+
+        Raises :
+            ValueError when unexpected line format is encountered
+
+        """
+        strL = line.split()
+        datestr = " ".join(strL[0:2])
+        datestr = datestr.split('.')[0]
+        try :
+            self.date = datetime.datetime.strptime(datestr, "%Y/%m/%d %H:%M:%S")
+            self.util = float(strL[2])
+        except ValueError :
+            ## If no data, set to invalid value
+            if 'no data' in line.lower():
+                self.util = -1
+            else :
+                raise ValueError("ERROR!!! Parsing line = {}".format(line))
+
+
+class Gpu :
+    """Class that maps to a single Slurm job"""
+
+    def __init__(self, gpupath : str = None):
+
+        """Initialize Gpu Class
+
+        Args :
+
+        Returns :
+
+        Raises :
+
+        """
+        fin = open(gpupath, 'r')
+        gidx = gpupath.split("/")[-1]
+        gidx = gidx.split(".")[0]
+        gidx = int(gidx.split("gpu")[-1])
+        self.gidx = gidx
+        self.utilL = []
+        self.healthy = True
+        for line in fin:
+            if line[0] == '#':
+                strL = line.split()
+                datestr = " ".join(strL[4:8])
+                datestr = datestr.split('.')[0]
+
+                # https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
+                if 'Start' in line :
+                    self.start = datetime.datetime.strptime(datestr, "%b %d %H:%M:%S %Y")
+                if 'End' in line :
+                    self.end= datetime.datetime.strptime(datestr, "%b %d %H:%M:%S %Y")
+            else :
+                util = Util(line)
+                self.utilL.append(util)
+        fin.close()
+
+
+class Node :
+    """Take list of gpuutil files, read in and allocate gpus"""
+
+    def __init__(self, gpupathL : str = None):
+
+        """Initialize Node Class,
+
+        Args :
+            gpuL = list of node*_gpuutil_*.txt files, used to allocate Gpu class and
+                   read the data
+
+        Returns :
+
+        Raises :
+
+        """
+        self.gpuL = []
+        name = gpupathL[0].split("/")[-1]
+        name = name.split("_")[0]
+        self.name = name
+        for gpupath in gpupathL:
+            gpu = Gpu(gpupath)
+            if gpu.healthy is False :
+                print("{} : gpu{}".format(self.name, gpu.gidx))
+            self.gpuL.append(gpu)
+        # Set consolidator
+        consolidator = (name.split('_')[3]).split('.')
+        self.consolidator = consolidator
+
+
+class Cluster :
+    """Take list of Nodes"""
+
+    def __init__(self, nodeL : List[Node] = None):
+
+        """Initialize Cluster Class,
+
+        Args :
+            gpuL = list of node*_gpuutil_*.txt files, used to allocate Gpu class and
+                   read the data
+
+        Returns :
+
+        Raises :
+
+        """

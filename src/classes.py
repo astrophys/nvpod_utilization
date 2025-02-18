@@ -354,7 +354,8 @@ class Gpu :
         fin = open(gpupath, 'r')
         gidx = gpupath.split("/")[-1]
         gidx = gidx.split(".")[0]
-        gidx = int(gidx.split("gpu")[-1])
+        gidx = gidx.split("gpu")[-1]
+        gidx = int(gidx.split("_")[0])
         self.gidx = gidx
         self.utilL = []
         self.healthy = True
@@ -393,6 +394,7 @@ class Node :
         """
         self.gpuL = []
         name = gpupathL[0].split("/")[-1]
+        consolidator = (name.split('_')[3]).split('.')[0]
         name = name.split("_")[0]
         self.name = name
         for gpupath in gpupathL:
@@ -401,7 +403,6 @@ class Node :
                 print("{} : gpu{}".format(self.name, gpu.gidx))
             self.gpuL.append(gpu)
         # Set consolidator
-        consolidator = (name.split('_')[3]).split('.')
         self.consolidator = consolidator
 
 

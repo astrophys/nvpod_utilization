@@ -20,13 +20,14 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import os
 import sys
+import glob
 import random
 import datetime
 import numpy as np
 from numpy.typing import ArrayLike
 import pandas as pd
 from typing import List
-from classes import Job,Step,SacctObj,User
+from classes import Job,Step,SacctObj,User,Node
 
 # Parses output created by :
 #   sacct -p -a -S 2024-09-01 --format="job,jobname,user,node,elapsedraw,alloccpus,cputimeraw,maxrss,state,start,end,reqtres"
@@ -299,3 +300,57 @@ def make_autopct(percentusertimeV : ArrayLike = None, usernameV : List[str] = No
     #total = sum(values)
     #val = int(round(pct*total/100.0))
     #return '{p"poop"
+
+
+def read_data_dir(path : str = None):
+    """Read directory with ALL node*_gputemp_gpu*.txt files
+
+    Args :
+        path = path to directory with node*_gputemp_gpu*.txt file
+
+    Returns
+
+    Raises
+
+    """
+    fileL = os.listdir(path)
+
+    # Gather list of nodes
+    nodenameL = []
+    for fin in fileL:
+        if 'gpuutil' not in fin:
+            continue
+        nodename = fin.split('_')[0]
+        if nodename not in nodenameL:
+            nodenameL.append(nodename)
+
+    # Only do utilization
+    if len(nodenameL) == 0:
+        raise ValueError("ERROR!! No files found")
+    else:
+        print("{} nodes found".format(len(nodenameL)))
+
+    # 2min
+    cluster2minL = []
+    for nodename in nodenameL:
+        gpupathL = glob.glob("{}/{}_gpuutil_*_2min.txt".format(path,nodename))
+        node = Node(gpupathL=gpupathL)
+        cluster2minL.append(node)
+
+    # 1 hour
+    cluster1hL = []
+    for nodename in nodenameL:
+        gpupathL = glob.glob("{}/{}_gpuutil_*_1h.txt".format(path,nodename))
+        node = Node(gpupathL=gpupathL)
+        cluster1hL.append(node)
+
+    # 1 day
+    cluster1dL = []
+    for nodename in nodenameL:
+        gpupathL = glob.glob("{}/{}_gpuutil_*_1h.txt".format(path,nodename))
+        node = Node(gpupathL=gpupathL)
+        cluster1dL.append(node)
+
+    print('done')
+
+

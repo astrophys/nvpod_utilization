@@ -27,7 +27,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 import pandas as pd
 from typing import List
-from classes import Job,Step,SacctObj,User,Node
+from classes import Job,Step,SacctObj,User,Node,Cluster
 
 # Parses output created by :
 #   sacct -p -a -S 2024-09-01 --format="job,jobname,user,node,elapsedraw,alloccpus,cputimeraw,maxrss,state,start,end,reqtres"
@@ -318,7 +318,7 @@ def read_data_dir(path : str = None):
     # Gather list of nodes
     nodenameL = []
     for fin in fileL:
-        if 'gpuutil' not in fin:
+        if 'gpuutil' not in fin or '.swp' in fin:
             continue
         nodename = fin.split('_')[0]
         if nodename not in nodenameL:
@@ -328,28 +328,42 @@ def read_data_dir(path : str = None):
     if len(nodenameL) == 0:
         raise ValueError("ERROR!! No files found")
     else:
-        print("{} nodes found".format(len(nodenameL)))
+        print("{} nodes found : ".format(len(nodenameL)))
+        for n in sorted(nodenameL):
+            print("\t{}".format(n))
 
     # 2min
-    cluster2minL = []
+    node2minL = []
     for nodename in nodenameL:
+        if nodename == 'totalgpuutilization':
+            continue
         gpupathL = glob.glob("{}/{}_gpuutil_*_2min.txt".format(path,nodename))
         node = Node(gpupathL=gpupathL)
-        cluster2minL.append(node)
+        node2minL.append(node)
+    gpupath = "{}/totalgpuutilization_2min.txt".format(path,nodename)
+    cluster2min = Cluster(node2minL, gpupath)
 
     # 1 hour
-    cluster1hL = []
+    node1hL = []
     for nodename in nodenameL:
+        if nodename == 'totalgpuutilization':
+            continue
         gpupathL = glob.glob("{}/{}_gpuutil_*_1h.txt".format(path,nodename))
         node = Node(gpupathL=gpupathL)
-        cluster1hL.append(node)
+        node1hL.append(node)
+    gpupath = "{}/totalgpuutilization_1h.txt".format(path,nodename)
+    cluster1h = Cluster(node1hL, gpupath)
 
     # 1 day
-    cluster1dL = []
+    node1dL = []
     for nodename in nodenameL:
-        gpupathL = glob.glob("{}/{}_gpuutil_*_1h.txt".format(path,nodename))
+        if nodename == 'totalgpuutilization':
+            continue
+        gpupathL = glob.glob("{}/{}_gpuutil_*_1d.txt".format(path,nodename))
         node = Node(gpupathL=gpupathL)
-        cluster1dL.append(node)
+        node1dL.append(node)
+    gpupath = "{}/totalgpuutilization_1d.txt".format(path,nodename)
+    cluster1d = Cluster(node1dL, gpupath)
 
     print('done')
 

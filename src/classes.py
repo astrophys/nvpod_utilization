@@ -326,9 +326,10 @@ class Util :
         strL = line.split()
         datestr = " ".join(strL[0:2])
         datestr = datestr.split('.')[0]
+        self.time = datetime.datetime.strptime(datestr, "%Y/%m/%d %H:%M:%S")
         try :
             self.date = datetime.datetime.strptime(datestr, "%Y/%m/%d %H:%M:%S")
-            self.util = float(strL[2])
+            self.util = float(strL[2].split('%')[0])
         except ValueError :
             ## If no data, set to invalid value
             if 'no data' in line.lower():
@@ -352,11 +353,14 @@ class Gpu :
 
         """
         fin = open(gpupath, 'r')
-        gidx = gpupath.split("/")[-1]
-        gidx = gidx.split(".")[0]
-        gidx = gidx.split("gpu")[-1]
-        gidx = int(gidx.split("_")[0])
-        self.gidx = gidx
+        if 'totalgpuutilization' not in gpupath:
+            gidx = gpupath.split("/")[-1]
+            gidx = gidx.split(".")[0]
+            gidx = gidx.split("gpu")[-1]
+            gidx = int(gidx.split("_")[0])
+            self.gidx = gidx
+        else :
+            self.gidx = -1
         self.utilL = []
         self.healthy = True
         for line in fin:
@@ -406,10 +410,35 @@ class Node :
         self.consolidator = consolidator
 
 
+class TotalGpu :
+    """Take totalgpuutilization_1d.txt, read it"""
+
+    def __init__(self, path : str = None):
+
+        """Initialize Total Class,
+
+        Args :
+            path = path to total gpu utilization
+
+        Returns :
+
+        Raises :
+
+        """
+        name = path.split("/")[-1]
+        consolidator = name.split('_')[-1].split('.')[0]
+        #name = name.split("_")[0]
+        self.name = name
+        self.consolidator = consolidator
+        # Isn't really a GPU, but the file is basically the same.
+        totalgpu = Gpu(path)
+        # Set consolidator
+
+
 class Cluster :
     """Take list of Nodes"""
 
-    def __init__(self, nodeL : List[Node] = None):
+    def __init__(self, nodeL : List[Node] = None, totalpath : str = None):
 
         """Initialize Cluster Class,
 
@@ -422,3 +451,5 @@ class Cluster :
         Raises :
 
         """
+        self.nodeL = nodeL
+        self.total = TotalGpu(totalpath)

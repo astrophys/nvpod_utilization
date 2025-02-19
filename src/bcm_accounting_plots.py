@@ -58,7 +58,6 @@ def main():
     Raises
 
     """
-
     parser = argparse.ArgumentParser(
                     description="This generates plots from output of `sacct`")
     parser.add_argument('--path', metavar='path/to/sacct_text_file', type=str,
@@ -70,13 +69,17 @@ def main():
     parser.add_argument('--plottype', metavar='plottype', type=str,
                         help='Options : "histogram", "pie" or "time-series"')
     parser.add_argument('--users', metavar='users', type=str,
-                        help='Options : "all", "total" or "someuser"')
+                        help='Options : "all", "total", "total_alloc+util", or '
+                        '"someuser"')
     parser.add_argument('--engine', metavar='engine', type=str,
                         help='Options : "plotly" or "matplotlib" (default)')
+    parser.add_argument('--totalutil_1d', metavar='path/to/gpuutilization_1d',
+                        type=str, help='Path to many gpu utilization')
     args = parser.parse_args()
     path = args.path
     users = args.users
     plottype = args.plottype
+    totalutil1d = args.totalutil_1d
     engine = args.engine
     if engine is None :
         engine = 'matplotlib'
@@ -149,7 +152,8 @@ def main():
         if engine == 'matplotlib':
             plot_time_series_mpl(jobL=jobL, start=mintime, end=maxtime,
                              interval=interval, cpuorgpu='gpu',
-                             totalsystime=totaltimeperinterval, users=users)
+                             totalsystime=totaltimeperinterval, users=users,
+                             totalutil1d = totalutil1d)
         elif engine == 'plotly' :
             plot_time_series_plotly(jobL=jobL, start=mintime, end=maxtime,
                              interval=interval, cpuorgpu='gpu',

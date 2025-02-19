@@ -32,7 +32,7 @@ from functions import make_autopct
 from numpy.typing import ArrayLike
 from collections import OrderedDict
 from plotly.subplots import make_subplots
-from classes import Job,Step,SacctObj,User
+from classes import Job,Step,SacctObj,User,TotalGpu
 from functions import is_job_in_time_range
 
 
@@ -117,10 +117,6 @@ def gather_time_series(jobL : List[Job] = None, start : datetime.datetime = None
     """
     delta = datetime.timedelta(seconds=interval)
     date = start
-    #usageL = []
-    #timeL = []
-    #userL = []
-    #df = pd.DataFrame()
     dateD = OrderedDict()
 
     # Loop over intervals
@@ -134,8 +130,6 @@ def gather_time_series(jobL : List[Job] = None, start : datetime.datetime = None
               maxt.strftime("%Y-%m-%d")))
         totalraw = 0
         for job in jobL:
-            #if job.user not in  userL:
-            #    userL.append(job.user)
             inrange, overlap = is_job_in_time_range(job, mint, maxt)
             if inrange == True:
                 if cpuorgpu.lower() == 'gpu':
@@ -156,26 +150,57 @@ def gather_time_series(jobL : List[Job] = None, start : datetime.datetime = None
                     userD[job.user] += jobraw
                 else :
                     userD[job.user] = jobraw
-        #usageL.append(totalraw)
-        #timeL.append(midt)
         userD['total'] = totalraw
         dateD[midt] = userD
-        #print("{} : {}".format(timeL[-1], totalraw / totalsystime * 100))
         date += delta
-    #usageV = np.asarray(usageL)
     df = pd.DataFrame.from_dict(dateD, orient='index')
     df.sort_index(inplace=True)
-    #df = pd.DataFrame.from_dict(dateD, orient='columns', columns=dateD.keys())
-    #df = df.replace('NaN', 0)
     df.fillna(0, inplace=True)
+    return df
 
+
+def gather_totalgpu_time_series(totalgpu : TotalGpu = None,
+                     start : datetime.datetime = None,
+                     end : datetime.datetime = None, interval : float = None):
+    """Gathers data for time series plot.
+
+    Args
+
+        N/A
+
+    Returns
+
+    Raises
+
+    """
+    delta = datetime.timedelta(seconds=interval)
+    date = start
+    dateD = OrderedDict()
+    utilL = []
+
+    # Loop over intervals
+    #mint = date
+    #maxt = date + delta
+    #midt = date + delta/2.0
+    print("{}   --->   {}".format(start.strftime("%Y-%m-%d"),
+          end.strftime("%Y-%m-%d")))
+
+    for util in totalgpu.totalgpu.utilL:
+        if start <= util.time and util.time <= end: 
+            inrange = True
+            dateD[util.time] = util.util
+    #date += delta
+    df = pd.DataFrame.from_dict(dateD, orient='index')
+    df.sort_index(inplace=True)
+    df.fillna(0, inplace=True)
+    df = df.rename(columns={0:'util'})
     return df
 
 
 def plot_time_series_mpl(jobL : List[Job] = None, start : datetime.datetime = None,
                      end : datetime.datetime = None, interval : float = None,
                      cpuorgpu : str = None, totalsystime : float = None,
-                     users : str = None):
+                     users : str = None, totalutil1d : str = None):
     """Generates time series plot. Integrate over interval between 'start' and 'end'
 
     Args
@@ -190,25 +215,36 @@ def plot_time_series_mpl(jobL : List[Job] = None, start : datetime.datetime = No
     df = gather_time_series(jobL=jobL, start=start, end=end,
                             interval=interval, cpuorgpu=cpuorgpu,
                             totalsystime=totalsystime)
-
     #### Plot
     fig = plt.figure()
 
     ## Only 1 plot - the total
-    if users == 'total':
+    if users == 'total' or users == 'total_alloc+util' :
         gs = fig.add_gridspec(1,1)
         # cpu
         ax = fig.add_subplot(gs[0,0])
-        ax.plot(df['total'].index, df['total'] / totalsystime * 100)
+
+        ## Total allocation with total utilization
+        if users == 'total_alloc+util':
+            #print("Average Utilization / Efficiency = {}".format())
+            ax.set_title("Percent {} allocation and utilization".format(cpuorgpu))
+            ax.set_ylabel("{} % ".format(cpuorgpu))
+            totalgpu1d = TotalGpu(path=totalutil1d)
+            dfutil = gather_totalgpu_time_series(totalgpu = totalgpu1d, start=start,
+                                                 end=end, interval=interval)
+        else:
+            ax.set_title("Percent {} allocation ".format(cpuorgpu))
+            ax.set_ylabel("{} % allocation".format(cpuorgpu))
+
+        #ax.plot(df['total'].index, df['total'] / totalsystime * 100)
+        ax.plot(dfutil['util'].index, dfutil['util'], color = 'red')
         #https://stackoverflow.com/a/56139690/4021436
         #ax.set_xticklabels(timeL, rotation=45, ha='right')
         ax.tick_params(axis='x', labelrotation=45)
-        ax.set_title("Percent {} allocation ".format(cpuorgpu))
-        ax.set_ylabel("{} % allocation".format(cpuorgpu))
-        ax.set_ylim(0,100)
+        #ax.set_ylim(0,100)
         print("Time Sum = {}".format(np.sum(df['total'])))
         print("Total Time avail = {}".format(totalsystime))
-        print("Average Utilization = {}".format(np.mean(df['total'])/totalsystime))
+        print("Average Allocation = {}".format(np.mean(df['total'])/totalsystime))
         plt.savefig("total_gpu_allocation.pdf")
     ## Total + users plot
     elif users == 'all':

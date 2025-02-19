@@ -328,7 +328,7 @@ class Util :
         datestr = datestr.split('.')[0]
         self.time = datetime.datetime.strptime(datestr, "%Y/%m/%d %H:%M:%S")
         try :
-            self.date = datetime.datetime.strptime(datestr, "%Y/%m/%d %H:%M:%S")
+            #self.date = datetime.datetime.strptime(datestr, "%Y/%m/%d %H:%M:%S")
             self.util = float(strL[2].split('%')[0])
         except ValueError :
             ## If no data, set to invalid value
@@ -431,7 +431,7 @@ class TotalGpu :
         self.name = name
         self.consolidator = consolidator
         # Isn't really a GPU, but the file is basically the same.
-        totalgpu = Gpu(path)
+        self.totalgpu = Gpu(path)
         # Set consolidator
 
 
@@ -453,3 +453,17 @@ class Cluster :
         """
         self.nodeL = nodeL
         self.total = TotalGpu(totalpath)
+
+
+    def validate(self):
+
+        """Validate that the total GPU is the the average across all nodes
+
+        Args :
+
+        Returns :
+
+        Raises :
+
+        """
+

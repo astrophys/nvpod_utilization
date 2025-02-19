@@ -178,18 +178,14 @@ def gather_totalgpu_time_series(totalgpu : TotalGpu = None,
     dateD = OrderedDict()
     utilL = []
 
-    # Loop over intervals
-    #mint = date
-    #maxt = date + delta
-    #midt = date + delta/2.0
     print("{}   --->   {}".format(start.strftime("%Y-%m-%d"),
           end.strftime("%Y-%m-%d")))
 
     for util in totalgpu.totalgpu.utilL:
-        if start <= util.time and util.time <= end: 
+        if start <= util.time and util.time <= end:
             inrange = True
             dateD[util.time] = util.util
-    #date += delta
+            print("{} {}".format(util.time, util.util))
     df = pd.DataFrame.from_dict(dateD, orient='index')
     df.sort_index(inplace=True)
     df.fillna(0, inplace=True)
@@ -232,16 +228,17 @@ def plot_time_series_mpl(jobL : List[Job] = None, start : datetime.datetime = No
             totalgpu1d = TotalGpu(path=totalutil1d)
             dfutil = gather_totalgpu_time_series(totalgpu = totalgpu1d, start=start,
                                                  end=end, interval=interval)
+            ax.plot(dfutil['util'].index, dfutil['util'], color = 'red', label='utilization')
         else:
             ax.set_title("Percent {} allocation ".format(cpuorgpu))
             ax.set_ylabel("{} % allocation".format(cpuorgpu))
 
-        #ax.plot(df['total'].index, df['total'] / totalsystime * 100)
-        ax.plot(dfutil['util'].index, dfutil['util'], color = 'red')
+        ax.plot(df['total'].index, df['total'] / totalsystime * 100, label='allocation')
         #https://stackoverflow.com/a/56139690/4021436
         #ax.set_xticklabels(timeL, rotation=45, ha='right')
         ax.tick_params(axis='x', labelrotation=45)
-        #ax.set_ylim(0,100)
+        ax.set_ylim(0,100)
+        ax.legend()
         print("Time Sum = {}".format(np.sum(df['total'])))
         print("Total Time avail = {}".format(totalsystime))
         print("Average Allocation = {}".format(np.mean(df['total'])/totalsystime))

@@ -49,6 +49,8 @@ def main():
     Raises
 
     """
+    print("THIS IS UNFINISHED!!!")
+    sys.exit(1)
 
     parser = argparse.ArgumentParser(
                 description="Takes data extracted from cmsh (via collect_data.sh) "

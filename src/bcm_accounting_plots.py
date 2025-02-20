@@ -147,6 +147,16 @@ def main():
         print("Now have {} jobs\n".format(len(subsetL)))
         jobL = subsetL
 
+    # Diagnostics, ensure we rm'd excluded notes
+    # tmpL=[]
+    # for job in jobL:
+    #     if len(job.nodelist) == 1 :
+    #         tmpL.append(job.nodelist[0])
+    #     elif len(job.nodelist) > 1 :
+    #         tmpL.extend(job.nodelist)
+    # print("jobL only uses nodes: ")
+    # for node in sorted(set(tmpL)):
+    #     print("\t{}".format(node))
 
 
     # total time avail

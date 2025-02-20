@@ -39,7 +39,7 @@ class SacctObj :
     def __init__(self, jobid : int = None, jobname : str = None, nodelist : str = None,
                  elapsedraw : int = None, alloccpus : int = None,
                  cputimeraw : str = None, maxrss : str = None, state : str = None,
-                 start : str = None, end : str = None):
+                 start : str = None, end : str = None, Verbose : bool = False):
         """Initialize SacctObj Class, contains only fields that that should be
            non-empty in sacct output
 
@@ -68,15 +68,21 @@ class SacctObj :
             nodes = nodelist.split('[')[1]
             nodes = nodes.split(']')[0]
             nodes = nodes.split(',')
-            # loop over node-ranges
+            # loop over node-ranges, like node[06-08,13,24-29]
             for nr in nodes :
-                minnode = nr.split('-')[0].lstrip("0")
-                maxnode = nr.split('-')[0].lstrip("0")
-                tmp = ["{}0{}".format(stem,i) if i < 10 else "{}{}".format(stem,i) for i in range(int(minnode),int(maxnode)+1)]
-                self.nodelist.append(tmp)
+                # handle cases like node[06-09]
+                if '-' in nr:
+                    minnode = nr.split('-')[0].lstrip("0")
+                    maxnode = nr.split('-')[1].lstrip("0")
+                    tmp = ["{}0{}".format(stem,i) if i < 10 else "{}{}".format(stem,i) for i in range(int(minnode),int(maxnode)+1)]
+                    self.nodelist.extend(tmp)
+                # handle cases like node[06]
+                else :
+                    tmp = "{}{}".format(stem,nr)
+                    self.nodelist.append(tmp)
         else:
             self.nodelist.append(nodelist)
-        if elapsedraw <= 10**-9:
+        if elapsedraw <= 10**-9 and Verbose is True :
             print("WARNING!!! Job {} has almost 0 elapsedraw time "
                   "{}".format(jobid, elapsedraw))
         self.elapsedraw = elapsedraw

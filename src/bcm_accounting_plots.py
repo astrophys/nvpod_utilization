@@ -27,19 +27,22 @@ import random
 import argparse
 import datetime
 import operator
+#import itertools
+import operator
+import matplotlib
 import numpy as np
 import pandas as pd
-import matplotlib
 #matplotlib.use('tkagg')        # Linux
 matplotlib.use('qtagg')        # Linux
 from classes import User
+from functools import reduce
 import matplotlib.pyplot as plt
 from plot_funcs import make_pie
-from plot_funcs import plot_time_series_mpl
-from plot_funcs import plot_time_series_plotly
 from functions import make_autopct
 from functions import parse_sacct_file
 from functions import is_job_in_time_range
+from plot_funcs import plot_time_series_mpl
+from plot_funcs import plot_time_series_plotly
 
 
 # Expects data like : sacct --allusers -P -S 2024-08-01 --format="jobidraw,jobname,user,nodelist,elapsedraw,alloccpus,cputimeraw,maxrss,state,start,end,reqtres" > sacct_2024-08-01.txt
@@ -75,16 +78,29 @@ def main():
                         help='Options : "plotly" or "matplotlib" (default)')
     parser.add_argument('--totalutil_1d', metavar='path/to/gpuutilization_1d',
                         type=str, help='Path to many gpu utilization')
+    parser.add_argument('--exclude_nodes', metavar='exclude_nodes', nargs='?',
+                        type=str, help='Exclude nodes from calculation. Useful when'
+                                       'considering nodes that have MIGs enabled')
     args = parser.parse_args()
     path = args.path
     users = args.users
     plottype = args.plottype
     totalutil1d = args.totalutil_1d
     engine = args.engine
+    if args.exclude_nodes is not None :
+        if('[' in args.exclude_nodes or ']' in args.exclude_nodes or
+           '-' in args.exclude_nodes):
+            raise ValueError("ERROR!!! You must write the full name of each node")
+        excludenodeL = args.exclude_nodes.split(',')
+    else :
+        excludenodeL = None
     if engine is None :
         engine = 'matplotlib'
     mintime = datetime.datetime.strptime(args.start, "%Y-%m-%dT%H:%M:%S")
     maxtime = datetime.datetime.strptime(args.end, "%Y-%m-%dT%H:%M:%S")
+    if maxtime < mintime :
+        raise ValueError("ERROR!!! mintime ({}) > maxtime "
+                         "({})".format(mintime,maxtime))
     walltime = maxtime - mintime
     walltime = walltime.total_seconds()
     print("Time Range : ")
@@ -98,8 +114,42 @@ def main():
     #df = pd.read_csv(path, sep='|')
     (_, _, jobL, starttime, endtime) = parse_sacct_file(path=path)
 
-    # total time avail
+    # Exclude nodes...
+    if excludenodeL is not None :
+        idx=0
+        subsetL = []
+        includednodeL = []
+        for job in jobL :
+            keep = True
+            for node in excludenodeL :
+                if node in job.nodelist :
+                    keep = False
+                    break
+            if keep is True :
+                idx += 1
+                subsetL.append(job)
+                # Handle lists of differing length
+                if len(job.nodelist) == 1 :
+                    includednodeL.append(job.nodelist[0])
+                elif len(job.nodelist) > 1 :
+                    includednodeL.extend(job.nodelist)
+                else :
+                    raise ValueError("ERROR!! Invalid job.nodelist "
+                                     "{}".format(job.nodelist))
+        #includednodeL = list(itertools.chain.from_iterable(includednodeL))
+        print("Included Nodes : ")
+        for node in sorted(set(includednodeL)):
+            print("\t{}".format(node))
+        print("Excluded Nodes : ")
+        for node in excludenodeL:
+            print("\t{}".format(node))
+        print("Originally had {} jobs".format(len(jobL)))
+        print("Now have {} jobs\n".format(len(subsetL)))
+        jobL = subsetL
 
+
+
+    # total time avail
     if plottype == 'pie':
         ## Extract by user
         userL = []

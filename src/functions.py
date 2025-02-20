@@ -332,7 +332,7 @@ def read_data_dir(path : str = None):
         for n in sorted(nodenameL):
             print("\t{}".format(n))
 
-    # 2min
+    # 2min - THIS REALLY ISN'T 2min, more like 10s.
     node2minL = []
     for nodename in nodenameL:
         if nodename == 'totalgpuutilization':

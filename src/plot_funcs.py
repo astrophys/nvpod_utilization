@@ -196,7 +196,7 @@ def gather_totalgpu_time_series(totalgpu : TotalGpu = None,
 def plot_time_series_mpl(jobL : List[Job] = None, start : datetime.datetime = None,
                      end : datetime.datetime = None, interval : float = None,
                      cpuorgpu : str = None, totalsystime : float = None,
-                     users : str = None, totalutil1d : str = None):
+                     users : str = None, totalutil1d : str = None, title : str = None):
     """Generates time series plot. Integrate over interval between 'start' and 'end'
 
     Args
@@ -223,12 +223,16 @@ def plot_time_series_mpl(jobL : List[Job] = None, start : datetime.datetime = No
         ## Total allocation with total utilization
         if users == 'total_alloc+util':
             #print("Average Utilization / Efficiency = {}".format())
-            ax.set_title("Percent {} allocation and utilization".format(cpuorgpu))
+            if title is None :
+                ax.set_title("{} allocation and utilization".format(cpuorgpu))
+            else :
+                ax.set_title(title)
             ax.set_ylabel("{} % ".format(cpuorgpu))
             totalgpu1d = TotalGpu(path=totalutil1d)
             dfutil = gather_totalgpu_time_series(totalgpu = totalgpu1d, start=start,
                                                  end=end, interval=interval)
             ax.plot(dfutil['util'].index, dfutil['util'], color = 'red', label='utilization')
+            print("Average Utilization = {:<.2f} %".format(np.mean(dfutil['util'])))
         else:
             ax.set_title("Percent {} allocation ".format(cpuorgpu))
             ax.set_ylabel("{} % allocation".format(cpuorgpu))
@@ -239,9 +243,10 @@ def plot_time_series_mpl(jobL : List[Job] = None, start : datetime.datetime = No
         ax.tick_params(axis='x', labelrotation=45)
         ax.set_ylim(0,100)
         ax.legend()
+        print("Average Allocation  = {:<.2f} "
+              "%".format(np.mean(df['total'])/totalsystime * 100))
         print("Time Sum = {}".format(np.sum(df['total'])))
         print("Total Time avail = {}".format(totalsystime))
-        print("Average Allocation = {}".format(np.mean(df['total'])/totalsystime))
         plt.savefig("total_gpu_allocation.pdf")
     ## Total + users plot
     elif users == 'all':

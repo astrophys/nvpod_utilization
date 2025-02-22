@@ -69,7 +69,7 @@ def main():
                         help='Time in YYYY-MM-DDTHH:MM:SS format')
     parser.add_argument('--end', metavar='endtime', type=str,
                         help='Time in YYYY-MM-DDTHH:MM:SS format')
-    parser.add_argument('--plottype', metavar='plottype', type=str,
+    parser.add_argument('--plot_type', metavar='plottype', type=str,
                         help='Options : "histogram", "pie" or "time-series"')
     parser.add_argument('--users', metavar='users', type=str,
                         help='Options : "all", "total", "total_alloc+util", or '
@@ -81,12 +81,15 @@ def main():
     parser.add_argument('--exclude_nodes', metavar='exclude_nodes', nargs='?',
                         type=str, help='Exclude nodes from calculation. Useful when'
                                        'considering nodes that have MIGs enabled')
+    parser.add_argument('--plot_title', metavar='plottitle', nargs='?',
+                        type=str, help='Set title of plot')
     args = parser.parse_args()
     path = args.path
     users = args.users
-    plottype = args.plottype
+    plottype = args.plot_type
     totalutil1d = args.totalutil_1d
     engine = args.engine
+    title = args.plot_title
     if args.exclude_nodes is not None :
         if('[' in args.exclude_nodes or ']' in args.exclude_nodes or
            '-' in args.exclude_nodes):
@@ -146,8 +149,9 @@ def main():
         print("Originally had {} jobs".format(len(jobL)))
         print("Now have {} jobs\n".format(len(subsetL)))
         jobL = subsetL
+        nnodes = nnodes - len(excludenodeL)
 
-    # Diagnostics, ensure we rm'd excluded notes
+    ### Diagnostics, ensure we rm'd excluded notes
     # tmpL=[]
     # for job in jobL:
     #     if len(job.nodelist) == 1 :
@@ -157,6 +161,10 @@ def main():
     # print("jobL only uses nodes: ")
     # for node in sorted(set(tmpL)):
     #     print("\t{}".format(node))
+
+    print("nnodes = {}".format(nnodes))
+    print("ngpupernode = {}".format(ngpupernode))
+    print("ncpupernode = {}".format(ncpupernode))
 
 
     # total time avail
@@ -207,13 +215,15 @@ def main():
     elif plottype == 'time-series':
         interval = 3600 * 24    # in seconds
         totaltimeperinterval = interval * nnodes * ngpupernode
+        print("interval size = {}s".format(interval))
+        print("totaltimeperinterval = {}s".format(totaltimeperinterval))
         if users is None:
             raise ValueError("ERROR!! Please specify which users to plot")
         if engine == 'matplotlib':
             plot_time_series_mpl(jobL=jobL, start=mintime, end=maxtime,
                              interval=interval, cpuorgpu='gpu',
                              totalsystime=totaltimeperinterval, users=users,
-                             totalutil1d = totalutil1d)
+                             totalutil1d = totalutil1d, title=title)
         elif engine == 'plotly' :
             plot_time_series_plotly(jobL=jobL, start=mintime, end=maxtime,
                              interval=interval, cpuorgpu='gpu',

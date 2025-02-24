@@ -49,6 +49,7 @@ from plot_funcs import plot_time_series_plotly
 
 # Run via
 #    python -m pdb src/bcm_accounting_plots.py --path data/sacct_2024-05-01_to_2024-10-31.txt --start 2024-05-01T00:00:00 --end 2024-11-01T00:00:00 --plottyp time-series --users all
+#   python -m pdb src/bcm_accounting_plots.py --path data/20250214/sacct_2025-02-14_short --start 2025-01-31T00:00:00 --end 2025-02-13T00:00:00 --plot_type time-series --users total_alloc+util --engine matplotlib --totalutil_1d data/20250214/totalgpuutilization_1d.txt --exclude_nodes rceabrg01,rceabrg02 --plot_title "GPU allococation and utilization excluding rceabrg[01-02]"
 def main():
     """Loads the sacct .
 
@@ -76,18 +77,36 @@ def main():
                         '"someuser"')
     parser.add_argument('--engine', metavar='engine', type=str,
                         help='Options : "plotly" or "matplotlib" (default)')
-    parser.add_argument('--totalutil_1d', metavar='path/to/gpuutilization_1d',
-                        type=str, help='Path to many gpu utilization')
+    parser.add_argument('--totalutil', metavar='path/to/gpuutilization_[1h,1d]',
+                        type=str, help='Total utilization file, e.g. 1h or 1d')
     parser.add_argument('--exclude_nodes', metavar='exclude_nodes', nargs='?',
                         type=str, help='Exclude nodes from calculation. Useful when'
                                        'considering nodes that have MIGs enabled')
     parser.add_argument('--plot_title', metavar='plottitle', nargs='?',
                         type=str, help='Set title of plot')
+    parser.add_argument('--hourinterval', metavar='hourinterval', nargs='?',
+                        help='Time interval in h, only valid for time-series',
+                        type=str )
     args = parser.parse_args()
     path = args.path
     users = args.users
     plottype = args.plot_type
-    totalutil1d = args.totalutil_1d
+    ###
+    if args.hourinterval is not None :
+        hourinterval = float(args.hourinterval)
+    else :
+        hourinterval = 24
+    ###
+    if ((args.totalutil).split('_')[-1]).split('.')[0] == '1d' :
+        totalutil = args.totalutil
+        if hourinterval < 24 :
+            raise ValueError("ERROR!!! Can't have time resolution less than 1d "
+                             "when using a 1d utilization file")
+    elif ((args.totalutil).split('_')[-1]).split('.')[0] == '1h' :
+        totalutil = args.totalutil
+    elif args.totalutil is not None:
+        raise ValueError("ERROR!!! Please use a total utilization file with "
+                         "either a '_1h.txt' or '_1d.txt' suffix")
     engine = args.engine
     title = args.plot_title
     if args.exclude_nodes is not None :
@@ -213,8 +232,9 @@ def main():
                           colorD=colorD, totalsystime=totalsystemgputime, title="GPU")
 
     elif plottype == 'time-series':
-        interval = 3600 * 24    # in seconds
+        interval = 3600 * hourinterval # in seconds
         totaltimeperinterval = interval * nnodes * ngpupernode
+        print("hourinterval = {}h".format(hourinterval))
         print("interval size = {}s".format(interval))
         print("totaltimeperinterval = {}s".format(totaltimeperinterval))
         if users is None:
@@ -223,7 +243,7 @@ def main():
             plot_time_series_mpl(jobL=jobL, start=mintime, end=maxtime,
                              interval=interval, cpuorgpu='gpu',
                              totalsystime=totaltimeperinterval, users=users,
-                             totalutil1d = totalutil1d, title=title)
+                             totalutil = totalutil, title=title)
         elif engine == 'plotly' :
             plot_time_series_plotly(jobL=jobL, start=mintime, end=maxtime,
                              interval=interval, cpuorgpu='gpu',

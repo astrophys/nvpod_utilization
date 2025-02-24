@@ -196,7 +196,7 @@ def gather_totalgpu_time_series(totalgpu : TotalGpu = None,
 def plot_time_series_mpl(jobL : List[Job] = None, start : datetime.datetime = None,
                      end : datetime.datetime = None, interval : float = None,
                      cpuorgpu : str = None, totalsystime : float = None,
-                     users : str = None, totalutil1d : str = None, title : str = None):
+                     users : str = None, totalutil : str = None, title : str = None):
     """Generates time series plot. Integrate over interval between 'start' and 'end'
 
     Args
@@ -228,8 +228,8 @@ def plot_time_series_mpl(jobL : List[Job] = None, start : datetime.datetime = No
             else :
                 ax.set_title(title)
             ax.set_ylabel("{} % ".format(cpuorgpu))
-            totalgpu1d = TotalGpu(path=totalutil1d)
-            dfutil = gather_totalgpu_time_series(totalgpu = totalgpu1d, start=start,
+            totalgpu = TotalGpu(path=totalutil)
+            dfutil = gather_totalgpu_time_series(totalgpu = totalgpu, start=start,
                                                  end=end, interval=interval)
             ax.plot(dfutil['util'].index, dfutil['util'], color = 'red', label='utilization')
             print("Average Utilization = {:<.2f} %".format(np.mean(dfutil['util'])))

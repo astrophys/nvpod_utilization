@@ -302,7 +302,7 @@ def make_autopct(percentusertimeV : ArrayLike = None, usernameV : List[str] = No
     #return '{p"poop"
 
 
-def read_data_dir(path : str = None):
+def read_gpu_util(path : str = None, excludenodeL : list = None):
     """Read directory with ALL node*_gputemp_gpu*.txt files
 
     Args :
@@ -320,6 +320,10 @@ def read_data_dir(path : str = None):
     for fin in fileL:
         if 'gpuutil' not in fin or '.swp' in fin:
             continue
+        if excludenodeL is not None :
+            for excludenode in excludenodeL:
+                if excludenode in fin:
+                    continue
         nodename = fin.split('_')[0]
         if nodename not in nodenameL:
             nodenameL.append(nodename)
@@ -365,6 +369,6 @@ def read_data_dir(path : str = None):
     gpupath = "{}/totalgpuutilization_1d.txt".format(path,nodename)
     cluster1d = Cluster(node1dL, gpupath)
 
-    print('done')
+    return(cluster2min, cluster1h, cluster1d)
 
 

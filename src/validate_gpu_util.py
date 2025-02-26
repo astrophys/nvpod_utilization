@@ -32,7 +32,7 @@ import matplotlib
 #matplotlib.use('tkagg')        # Linux
 matplotlib.use('qtagg')        # Linux
 import matplotlib.pyplot as plt
-from functions import read_data_dir
+from functions import read_gpu_util
 
 
 
@@ -49,17 +49,29 @@ def main():
     Raises
 
     """
-    print("THIS IS UNFINISHED!!!")
-    sys.exit(1)
 
     parser = argparse.ArgumentParser(
                 description="Takes data extracted from cmsh (via collect_data.sh) "
                             "and trolls through gpu utilization.")
     parser.add_argument('--path', metavar='path/to/toplevel/data/dir', type=str,
                         help='Path to parsable sacct file')
+    parser.add_argument('--excludenodes', metavar='excludenodes', nargs='?',
+                        type=str, help='Exclude nodes from calculation. Useful when'
+                                       'considering nodes that have MIGs enabled')
     args = parser.parse_args()
+
+
+    if args.excludenodes is not None :
+        if('[' in args.excludenodes or ']' in args.excludenodes or
+           '-' in args.excludenodes):
+            raise ValueError("ERROR!!! You must write the full name of each node")
+        excludenodeL = args.excludenodes.split(',')
+    else :
+        excludenodeL = None
+
+
     path = args.path
-    read_data_dir(path)
+    (cluster2min, cluster1h, cluster1d) = read_gpu_util(path, excludenodeL)
     sys.exit(0)
 
 

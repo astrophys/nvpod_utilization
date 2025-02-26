@@ -29,6 +29,7 @@ import datetime
 import numpy as np
 import pandas as pd
 from typing import List
+from bisect import bisect_left
 from collections import OrderedDict
 
 
@@ -344,6 +345,22 @@ class Util :
                 raise ValueError("ERROR!!! Parsing line = {}".format(line))
 
 
+    # https://stackoverflow.com/a/4010558/4021436
+    def __lt__(self, other):
+
+        """Utility used for sorting objects
+
+        Args :
+            other : Another Util object
+
+        Returns :
+            bool based on which is used
+
+        Raises :
+        """
+        return self.time < other.time
+
+
 class Gpu :
     """Class that maps to a single Slurm job"""
 
@@ -356,6 +373,7 @@ class Gpu :
         Returns :
 
         Raises :
+            ValueError if the utilization is not sorted by date
 
         """
         fin = open(gpupath, 'r')
@@ -383,14 +401,53 @@ class Gpu :
             else :
                 util = Util(line)
                 self.utilL.append(util)
+        if self.is_sorted(self.utilL) == False:
+            raise ValueError("ERROR!!! {} has unsorted gpu utilization".format(gpupath))
         fin.close()
+
+
+    def is_sorted(self, utilL : List[Util] = None) -> bool :
+        """Test to see if sorted
+
+        Args :
+            utilL : List of Util objects
+
+        Returns :
+            bool on if it is sorted or not
+
+        Raises :
+        """
+        tmpL = sorted(utilL)
+        return tmpL == utilL
+
+
+    def mean_util_over_interval(self, start : datetime.datetime = None,
+                                end : datetime.datetime = None,
+                                Verbose : bool = True) -> float :
+        """Calculate average utilization for gpu over some time interval
+
+        Args :
+            start : start of interval
+            end   : end of interval
+
+        Returns :
+            (float) of average utilization over a time interval
+
+        Raises :
+        """
+        # self.utilL must be sorted for this to work
+        # https://stackoverflow.com/a/2701189/4021436
+
+
+        #for util in self.utilL:
+
+        print('the end')
 
 
 class Node :
     """Take list of gpuutil files, read in and allocate gpus"""
 
     def __init__(self, gpupathL : str = None):
-
         """Initialize Node Class,
 
         Args :
@@ -414,6 +471,27 @@ class Node :
             self.gpuL.append(gpu)
         # Set consolidator
         self.consolidator = consolidator
+
+
+    def calc_util_over_interval(self, start : datetime.datetime = None,
+                                end : datetime.datetime = None):
+        """Calculate average utilization for entire node over some time interval
+
+        Args :
+            gpuL = list of node*_gpuutil_*.txt files, used to allocate Gpu class and
+                   read the data
+
+        Returns :
+
+        Raises :
+
+        """
+        total = 0
+        for gpu in self.gpuL:
+            gpumeanutil = gpu.mean_util_over_interval(start, end)
+            total += gpumeanutil
+        print('the end again')
+
 
 
 class TotalGpu :

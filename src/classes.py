@@ -217,13 +217,13 @@ class Job(SacctObj) :
                 self.gputimeraw = self.ngpu * self.elapsedraw
             if tresL[0] == 'mem':
                 if 'M' in tresL[1]:
-                    mem = int(tresL[1].split('M')[0]) / 1024
+                    mem = float(tresL[1].split('M')[0]) / 1024
                 elif 'G' in tresL[1]:
-                    mem = int(tresL[1].split('G')[0])
+                    mem = float(tresL[1].split('G')[0])
                 elif 'T' in tresL[1]:
-                    mem = int(tresL[1].split('T')[0]) * 1024
+                    mem = float(tresL[1].split('T')[0]) * 1024
                 elif 'K' in tresL[1]:
-                    mem = int(tresL[1].split('K')[0]) / 1024**2
+                    mem = float(tresL[1].split('K')[0]) / 1024**2
                 else:
                     raise ValueError("ERROR!! Unexpected memory units in tres : {}".format(tresL[1]))
                 self.reqtresmemgb = mem

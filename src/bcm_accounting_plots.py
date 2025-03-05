@@ -66,13 +66,13 @@ def main():
                     description="This generates plots from output of `sacct`")
     parser.add_argument('--path', metavar='path/to/sacct_text_file', type=str,
                         help='Path to parsable sacct file')
-    parser.add_argument('--start', metavar='starttime', type=str,
+    parser.add_argument('--start', metavar='YYYY-MM-DDTHH:MM:SS', type=str,
                         help='Time in YYYY-MM-DDTHH:MM:SS format')
-    parser.add_argument('--end', metavar='endtime', type=str,
+    parser.add_argument('--end', metavar='YYYY-MM-DDTHH:MM:SS', type=str,
                         help='Time in YYYY-MM-DDTHH:MM:SS format')
-    parser.add_argument('--plot_type', metavar='plottype', type=str,
+    parser.add_argument('--plot_type', metavar='histogram|pie|time-series', type=str,
                         help='Options : "histogram", "pie" or "time-series"')
-    parser.add_argument('--users', metavar='users', type=str,
+    parser.add_argument('--users', metavar='all|total|total_alloc+util', type=str,
                         help='Options : "all", "total", "total_alloc+util", or '
                         '"someuser"')
     parser.add_argument('--engine', metavar='engine', type=str,

@@ -282,7 +282,10 @@ def plot_time_series_mpl(jobL : List[Job] = None, start : datetime.datetime = No
             ax.set_title("{} : {:.1f}%".format(username,percentutil))
             ax.set_ylim(0,100)
             n += 1
-        fig.suptitle("Percent {} allocation of top 8 users".format(cpuorgpu))
+        if title is None :
+            fig.suptitle("Percent {} allocation of top 8 users".format(cpuorgpu))
+        else :
+            fig.suptitle(title)
 
 
     ### Individual users

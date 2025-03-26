@@ -97,16 +97,19 @@ def main():
     else :
         hourinterval = 24
     ###
-    if ((args.totalutil).split('_')[-1]).split('.')[0] == '1d' :
-        totalutil = args.totalutil
-        if hourinterval < 24 :
-            raise ValueError("ERROR!!! Can't have time resolution less than 1d "
-                             "when using a 1d utilization file")
-    elif ((args.totalutil).split('_')[-1]).split('.')[0] == '1h' :
-        totalutil = args.totalutil
-    elif args.totalutil is not None:
-        raise ValueError("ERROR!!! Please use a total utilization file with "
-                         "either a '_1h.txt' or '_1d.txt' suffix")
+    if args.totalutil is not None :
+        if ((args.totalutil).split('_')[-1]).split('.')[0] == '1d' :
+            totalutil = args.totalutil
+            if hourinterval < 24 :
+                raise ValueError("ERROR!!! Can't have time resolution less than 1d "
+                                 "when using a 1d utilization file")
+        elif ((args.totalutil).split('_')[-1]).split('.')[0] == '1h' :
+            totalutil = args.totalutil
+        elif args.totalutil is not None:
+            raise ValueError("ERROR!!! Please use a total utilization file with "
+                             "either a '_1h.txt' or '_1d.txt' suffix")
+    else:
+        totalutil = None
     engine = args.engine
     title = args.plot_title
     if args.exclude_nodes is not None :

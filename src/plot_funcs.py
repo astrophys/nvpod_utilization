@@ -23,7 +23,8 @@ import datetime
 import matplotlib
 import numpy as np
 import pandas as pd
-matplotlib.use('tkagg')
+#matplotlib.use('tkagg')
+#matplotlib.use('qtAgg')
 from typing import List,Dict
 import plotly.express as px
 import matplotlib.pyplot as plt

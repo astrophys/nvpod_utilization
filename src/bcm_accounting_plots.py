@@ -52,7 +52,9 @@ from plot_funcs import plot_time_series_plotly
 #
 #
 # For Monthly plots
-#   DPATH=data/20250403/; python -m pdb src/bcm_accounting_plots.py --path ${DPATH}/sacct_2025-04-03 --totalutil ${DPATH}/totalgpuutilization_1d.txt --start 2025-03-01T00:00:00 --end 2025-04-01T00:00:01 --plot_type time-series --users total_alloc+util --engine matplotlib --exclude_nodes rceabrg01,rceabrg02 --plot_title "GPU allococation and utilization excluding rceabrg[01-02]"
+#   DPATH=data/20250403/; python -m pdb src/bcm_accounting_plots.py --path ${DPATH}/sacct_2025-04-03 --totalutil ${DPATH}/totalgpuutilization_1d.txt --start 2025-03-01T00:00:00 --end 2025-04-01T00:00:00 --plot_type time-series --users total_alloc+util --engine matplotlib --exclude_nodes rceabrg01,rceabrg02 --plot_title "GPU allococation and utilization excluding rceabrg[01-02]"
+#   DPATH=data/20250403/; python -m pdb src/bcm_accounting_plots.py --path ${DPATH}/sacct_2025-04-03 --totalutil ${DPATH}/totalgpuutilization_1d.txt --start 2025-03-01T00:00:00 --end 2025-04-01T08:00:01 --plot_type time-series --users total_alloc+util --engine matplotlib --exclude_nodes rceabrg01,rceabrg02 --plot_title "GPU allococation and utilization excluding rceabrg[01-02]"
+>>>>>>> caa16a9ea2a83ae34b1d032859801ae07719b511
 def main():
     """Loads the sacct .
 

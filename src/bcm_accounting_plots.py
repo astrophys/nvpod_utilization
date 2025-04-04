@@ -49,7 +49,10 @@ from plot_funcs import plot_time_series_plotly
 
 # Run via
 #    python -m pdb src/bcm_accounting_plots.py --path data/sacct_2024-05-01_to_2024-10-31.txt --start 2024-05-01T00:00:00 --end 2024-11-01T00:00:00 --plottyp time-series --users all
-#   python -m pdb src/bcm_accounting_plots.py --path data/20250214/sacct_2025-02-14_short --start 2025-01-31T00:00:00 --end 2025-02-13T00:00:00 --plot_type time-series --users total_alloc+util --engine matplotlib --totalutil_1d data/20250214/totalgpuutilization_1d.txt --exclude_nodes rceabrg01,rceabrg02 --plot_title "GPU allococation and utilization excluding rceabrg[01-02]"
+#
+#
+# For Monthly plots
+#   DPATH=data/20250403/; python -m pdb src/bcm_accounting_plots.py --path ${DPATH}/sacct_2025-04-03 --totalutil ${DPATH}/totalgpuutilization_1d.txt --start 2025-03-01T00:00:00 --end 2025-04-01T00:00:00 --plot_type time-series --users total_alloc+util --engine matplotlib --exclude_nodes rceabrg01,rceabrg02 --plot_title "GPU allococation and utilization excluding rceabrg[01-02]"
 def main():
     """Loads the sacct .
 
